@@ -1,7 +1,9 @@
-char *generate_dsa_public_key(void);
+#include <string>
 
-char *generate_dsa_private_key(void);
+void generate_dsa_public_key(void);
 
-char *encrypt_dsa(char *message, char *public_key);
+std::string generate_dsa_private_key(void);
 
-char *decrypt_dsa(char *message, char *private_key);
+std::string encrypt_dsa(char *message, char *public_key);
+
+std::string decrypt_dsa(char *message, char *private_key);
