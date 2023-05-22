@@ -1,5 +1,5 @@
 CC := g++
-CFLAGS := -lssl -lcrypto
+CFLAGS := -lssl -lcrypto -lgmp -lgmpxx
 BUILDDIR := bin
 LIB := -L lib
 INC := -I include
@@ -11,6 +11,11 @@ install:
 	@echo "Installing OpenSSL Dependencies"
 	apt-get install openssl
 	apt-get install libssl-dev
+	@echo "Installing DSA Dependencies for large integers"
+	apt-get install libgmp-dev
+
+all: 
+	$(CC) lib/dsa.cpp -o $(BUILDDIR)/dsa $(CFLAGS)
 
 test: $(BUILDDIR)
 	@echo "$(CC) $(CFLAGS) test/tester.cpp -o $(BUILDDIR)/tester"
