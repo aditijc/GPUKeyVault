@@ -14,7 +14,7 @@ install:
 	@echo "Installing DSA Dependencies for large integers"
 	apt-get install libgmp-dev
 
-all: 
+all: $(BUILDDIR)
 	$(CC) lib/dsa.cpp -o $(BUILDDIR)/dsa $(CFLAGS)
 
 test: $(BUILDDIR)
