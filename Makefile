@@ -1,4 +1,4 @@
-CC := gcc
+CC := g++
 CFLAGS := 
 BUILDDIR := bin
 LIB := -L lib
@@ -8,8 +8,8 @@ $(BUILDDIR):
 	mkdir bin 
 
 test: $(BUILDDIR)
-	@echo "$(CC) test/tester.c -o $(BUILDDIR)/tester"
-	$(CC) test/tester.c -o $(BUILDDIR)/tester
+	@echo "$(CC) test/tester.cpp -o $(BUILDDIR)/tester"
+	$(CC) test/tester.cpp -o $(BUILDDIR)/tester
 	@echo "$(BUILDDIR)/tester"
 	$(BUILDDIR)/tester
 
