@@ -1,6 +1,4 @@
-char *generate_ecdsa_public_key(void);
-
-char *generate_ecdsa_private_key(void);
+char *generate_ecdsa_key_pair(void);
 
 char *encrypt_ecdsa(char *message, char *public_key);
 
