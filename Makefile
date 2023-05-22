@@ -1,5 +1,5 @@
 CC := g++
-CFLAGS := 
+CFLAGS := -lssl -lcrypto
 BUILDDIR := bin
 LIB := -L lib
 INC := -I include
@@ -7,9 +7,13 @@ INC := -I include
 $(BUILDDIR): 
 	mkdir bin 
 
+install: 
+	@echo "Installing OpenSSL Dependencies"
+	apt-get install openssl
+
 test: $(BUILDDIR)
-	@echo "$(CC) test/tester.cpp -o $(BUILDDIR)/tester"
-	$(CC) test/tester.cpp -o $(BUILDDIR)/tester
+	@echo "$(CC) $(CFLAGS) test/tester.cpp -o $(BUILDDIR)/tester"
+	$(CC) $(CFLAGS) test/tester.cpp -o $(BUILDDIR)/tester
 	@echo "$(BUILDDIR)/tester"
 	$(BUILDDIR)/tester
 
