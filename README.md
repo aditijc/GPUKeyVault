@@ -4,6 +4,6 @@ An implementation of PGP software using the GPU. Developed by Aditi Chandrasheka
 
 ## Build Instructions ##
 
-Install the necessary dependencies for GPUKeyVAult
+Install the necessary dependencies for GPUKeyVault
 
 `make install`

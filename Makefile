@@ -10,6 +10,7 @@ $(BUILDDIR):
 install: 
 	@echo "Installing OpenSSL Dependencies"
 	apt-get install openssl
+	apt-get install libssl-dev
 
 test: $(BUILDDIR)
 	@echo "$(CC) $(CFLAGS) test/tester.cpp -o $(BUILDDIR)/tester"
