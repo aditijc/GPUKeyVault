@@ -26,116 +26,308 @@ void generate_ecdh_key_pair(const char *pub_file, const char *priv_file) {
     EC_KEY_free(ec_key);
 }
 
-// char *encrypt_ecdh(const char *pub_file, const char *message) {
-//     int message_len = sizeof(message);
-//     FILE* f = fopen(pub_file, "r");
-//     EVP_PKEY* pkey = PEM_read_PUBKEY(f, NULL, NULL, NULL);
-//     fclose(f);
-
-//     // Create/initialize context
-//     EVP_PKEY_CTX* ctx;
-//     ctx = EVP_PKEY_CTX_new(pkey, NULL);
-//     EVP_PKEY_encrypt_init(ctx);
-
-//     // Encryption
-//     size_t ciphertextLen;
-//     EVP_PKEY_encrypt(ctx, NULL, &ciphertextLen, (const unsigned char *) message, sizeof(message));
-//     unsigned char* ciphertext = (unsigned char*)OPENSSL_malloc(ciphertextLen);
-//     EVP_PKEY_encrypt(ctx, ciphertext, &ciphertextLen, (const unsigned char*) message, sizeof(message));
-
-//     // Release memory
-//     EVP_PKEY_free(pkey);
-//     EVP_PKEY_CTX_free(ctx);
-//     return (char *) ciphertext;
-// }
-
-// char *decrypt_ecdh(char *message, char *private_key) {
-//     char *a = (char *) malloc(sizeof(char));
-//     return a;
-// }
-
-char *encrypt_ecdh(const char *pub_file, const char *message) {
+unsigned char* get_shared_secret(const char *priv_file, const char *pub_file) {
+    FILE *file = fopen(priv_file, "r");
+    EC_KEY *ec_privkey = PEM_read_ECPrivateKey(file, nullptr, nullptr, nullptr);
+    fclose(file);
     FILE *f = fopen(pub_file, "r");
-    EC_KEY *ec_key = PEM_read_EC_PUBKEY(f, NULL, NULL, NULL);
+    EC_KEY *ec_pubkey = PEM_read_EC_PUBKEY(f, NULL, NULL, NULL);
     fclose(f);
 
-    if (!ec_key) {
-        std::cerr << "Failed to read EC public key." << std::endl;
+    if (!ec_pubkey || !ec_privkey) {
+        std::cerr << "Encryption Error: Failed to read EC public or private keys." << std::endl;
+        return nullptr;
+    }
+    // Create EVP_PKEY objects from EC_KEY objects
+    EVP_PKEY* evp_privkey = EVP_PKEY_new();
+    EVP_PKEY* evp_pubkey = EVP_PKEY_new();
+    if (!EVP_PKEY_assign_EC_KEY(evp_privkey, ec_privkey) || !EVP_PKEY_assign_EC_KEY(evp_pubkey, ec_pubkey)) {
+        // Handle error
+        std::cout << "Encryption Error: EC keys don't exist" << std::endl;
+        EVP_PKEY_free(evp_privkey);
+        EVP_PKEY_free(evp_pubkey);
+        return nullptr;
+    }
+    
+    const EC_GROUP *ec_pubgroup = EC_KEY_get0_group(ec_pubkey);
+    size_t pubkey_len = EC_GROUP_get_degree(ec_pubgroup) / 8;
+    const EC_GROUP *ec_privgroup = EC_KEY_get0_group(ec_privkey);
+    size_t privkey_len = EC_GROUP_get_degree(ec_privgroup) / 8;
+
+    if (!ec_pubkey) {
+        std::cerr << "Encryption Error: Failed to read EC public key." << std::endl;
         return nullptr;
     }
 
-    const EC_GROUP *ec_group = EC_KEY_get0_group(ec_key);
-    size_t key_len = EC_GROUP_get_degree(ec_group) / 8;
-
-    // Derive the shared secret using ECDH
-    unsigned char *shared_secret = new unsigned char[key_len];
-    size_t secret_len = ECDH_compute_key(shared_secret, key_len, EC_KEY_get0_public_key(ec_key), ec_key, NULL);
-
-    if (secret_len == 0) {
-        std::cerr << "Failed to compute shared secret (encryption)." << std::endl;
-        EC_KEY_free(ec_key);
-        delete[] shared_secret;
-        return nullptr;
-    }
-
-    // Perform symmetric encryption using the shared secret
-    const EVP_CIPHER *cipher = EVP_aes_256_cbc();
-    const int block_size = EVP_CIPHER_block_size(cipher);
-
-    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    // Create ECDH context
+    EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(evp_privkey, NULL);
     if (!ctx) {
-        std::cerr << "Failed to create encryption context." << std::endl;
-        EC_KEY_free(ec_key);
-        delete[] shared_secret;
+        // Handle error
+        EVP_PKEY_free(evp_privkey);
+        EVP_PKEY_free(evp_pubkey);
+        EC_KEY_free(ec_privkey);
+        EC_KEY_free(ec_pubkey);
         return nullptr;
     }
 
-    unsigned char iv[block_size];
-    memset(iv, 0, sizeof(iv));
-
-    unsigned char *ciphertext = new unsigned char[key_len + block_size];
-    int ciphertext_len = 0;
-
-    if (EVP_EncryptInit_ex(ctx, cipher, NULL, shared_secret, iv) != 1 ||
-        EVP_EncryptUpdate(ctx, ciphertext, &ciphertext_len, reinterpret_cast<const unsigned char *>(message),
-                          strlen(message)) != 1 ||
-        EVP_EncryptFinal_ex(ctx, ciphertext + ciphertext_len, &ciphertext_len) != 1) {
-        std::cerr << "Encryption failed." << std::endl;
-        EC_KEY_free(ec_key);
-        delete[] shared_secret;
-        delete[] ciphertext;
-        EVP_CIPHER_CTX_free(ctx);
+    // Initialize the context for ECDH key derivation
+    if (EVP_PKEY_derive_init(ctx) <= 0) {
+        // Handle error
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(evp_privkey);
+        EVP_PKEY_free(evp_pubkey);
+        EC_KEY_free(ec_privkey);
+        EC_KEY_free(ec_pubkey);
         return nullptr;
     }
 
-    EVP_CIPHER_CTX_free(ctx);
-    EC_KEY_free(ec_key);
-    delete[] shared_secret;
+    // Provide the peer's public key to the context
+    if (EVP_PKEY_derive_set_peer(ctx, evp_pubkey) <= 0) {
+        // Handle error
+        EVP_PKEY_CTX_free(ctx);
+        EC_KEY_free(ec_privkey);
+        EC_KEY_free(ec_pubkey);
+        return nullptr;
+    }
 
-    return reinterpret_cast<char *>(ciphertext);
+    // Determine the size of the shared secret
+    size_t shared_secret_len;
+    if (EVP_PKEY_derive(ctx, NULL, &shared_secret_len) <= 0) {
+        // Handle error
+        EVP_PKEY_CTX_free(ctx);
+        EC_KEY_free(ec_privkey);
+        EC_KEY_free(ec_pubkey);
+        return nullptr;
+    }
+    // Allocate memory for the shared secret
+    unsigned char* shared_secret = new unsigned char[shared_secret_len];
+
+    // Derive the shared secret
+    if (EVP_PKEY_derive(ctx, shared_secret, &shared_secret_len) <= 0) {
+        // Handle error
+        delete[] shared_secret;
+        EVP_PKEY_CTX_free(ctx);
+        EC_KEY_free(ec_privkey);
+        EC_KEY_free(ec_pubkey);
+        return nullptr;
+    }
+
+    // Clean up memory
+    EVP_PKEY_CTX_free(ctx);
+    EC_KEY_free(ec_privkey);
+    EC_KEY_free(ec_pubkey);
 }
 
-char *decrypt_ecdh(char *message, const char *priv_file) {
-    FILE *f = fopen(priv_file, "r");
-    EC_KEY *ec_key = PEM_read_ECPrivateKey(f, NULL, NULL, NULL);
+char *encrypt_ecdh(const char *pub_file, const char *priv_file, const char *message) {
+    // unsigned char* shared_secret = get_shared_secret(priv_file, pub_file);
+    // size_t shared_secret_len = sizeof(shared_secret);
+    FILE *file = fopen(priv_file, "r");
+    EC_KEY *ec_privkey = PEM_read_ECPrivateKey(file, nullptr, nullptr, nullptr);
+    fclose(file);
+    FILE *f = fopen(pub_file, "r");
+    EC_KEY *ec_pubkey = PEM_read_EC_PUBKEY(f, NULL, NULL, NULL);
     fclose(f);
 
-    if (!ec_key) {
-        std::cerr << "Failed to read EC private key." << std::endl;
+    if (!ec_pubkey || !ec_privkey) {
+        std::cerr << "Encryption Error: Failed to read EC public or private keys." << std::endl;
+        return nullptr;
+    }
+    // Create EVP_PKEY objects from EC_KEY objects
+    EVP_PKEY* evp_privkey = EVP_PKEY_new();
+    EVP_PKEY* evp_pubkey = EVP_PKEY_new();
+    if (!EVP_PKEY_assign_EC_KEY(evp_privkey, ec_privkey) || !EVP_PKEY_assign_EC_KEY(evp_pubkey, ec_pubkey)) {
+        // Handle error
+        std::cout << "Encryption Error: EC keys don't exist" << std::endl;
+        EVP_PKEY_free(evp_privkey);
+        EVP_PKEY_free(evp_pubkey);
+        return nullptr;
+    }
+    
+    const EC_GROUP *ec_pubgroup = EC_KEY_get0_group(ec_pubkey);
+    size_t pubkey_len = EC_GROUP_get_degree(ec_pubgroup) / 8;
+    const EC_GROUP *ec_privgroup = EC_KEY_get0_group(ec_privkey);
+    size_t privkey_len = EC_GROUP_get_degree(ec_privgroup) / 8;
+
+    if (!ec_pubkey) {
+        std::cerr << "Encryption Error: Failed to read EC public key." << std::endl;
         return nullptr;
     }
 
-    const EC_GROUP *ec_group = EC_KEY_get0_group(ec_key);
-    size_t key_len = EC_GROUP_get_degree(ec_group) / 8;
+    // Create ECDH context
+    EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(evp_privkey, NULL);
+    if (!ctx) {
+        // Handle error
+        EVP_PKEY_free(evp_privkey);
+        EVP_PKEY_free(evp_pubkey);
+        EC_KEY_free(ec_privkey);
+        EC_KEY_free(ec_pubkey);
+        return nullptr;
+    }
 
-    // Derive the shared secret using ECDH
-    unsigned char *shared_secret = new unsigned char[key_len];
-    size_t secret_len = ECDH_compute_key(shared_secret, key_len, EC_KEY_get0_public_key(ec_key), ec_key, NULL);
+    // Initialize the context for ECDH key derivation
+    if (EVP_PKEY_derive_init(ctx) <= 0) {
+        // Handle error
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(evp_privkey);
+        EVP_PKEY_free(evp_pubkey);
+        EC_KEY_free(ec_privkey);
+        EC_KEY_free(ec_pubkey);
+        return nullptr;
+    }
 
-    if (secret_len == 0) {
-        std::cerr << "Failed to compute shared secret." << std::endl;
-        EC_KEY_free(ec_key);
+    // Provide the peer's public key to the context
+    if (EVP_PKEY_derive_set_peer(ctx, evp_pubkey) <= 0) {
+        // Handle error
+        EVP_PKEY_CTX_free(ctx);
+        EC_KEY_free(ec_privkey);
+        EC_KEY_free(ec_pubkey);
+        return nullptr;
+    }
+
+    // Determine the size of the shared secret
+    size_t shared_secret_len;
+    if (EVP_PKEY_derive(ctx, NULL, &shared_secret_len) <= 0) {
+        // Handle error
+        EVP_PKEY_CTX_free(ctx);
+        EC_KEY_free(ec_privkey);
+        EC_KEY_free(ec_pubkey);
+        return nullptr;
+    }
+    // Allocate memory for the shared secret
+    unsigned char* shared_secret = new unsigned char[shared_secret_len];
+
+    // Derive the shared secret
+    if (EVP_PKEY_derive(ctx, shared_secret, &shared_secret_len) <= 0) {
+        // Handle error
         delete[] shared_secret;
+        EVP_PKEY_CTX_free(ctx);
+        EC_KEY_free(ec_privkey);
+        EC_KEY_free(ec_pubkey);
+        return nullptr;
+    }
+
+        // Perform symmetric encryption using the shared secret
+        const EVP_CIPHER *cipher = EVP_aes_256_cbc();
+        const int block_size = EVP_CIPHER_block_size(cipher);
+
+        EVP_CIPHER_CTX *aes_ctx = EVP_CIPHER_CTX_new();
+        if (!aes_ctx) {
+            std::cerr << "Encryption Error: Failed to create encryption context." << std::endl;
+            // EC_KEY_free(ec_pubkey);
+            delete[] shared_secret;
+            return nullptr;
+        }
+
+        unsigned char iv[block_size];
+        memset(iv, 0, sizeof(iv));
+
+        unsigned char *ciphertext = new unsigned char[shared_secret_len + block_size];
+        int ciphertext_len = 0;
+
+        if (EVP_EncryptInit_ex(aes_ctx, cipher, NULL, shared_secret, iv) != 1 ||
+            EVP_EncryptUpdate(aes_ctx, ciphertext, &ciphertext_len, reinterpret_cast<const unsigned char *>(message),
+                            strlen(message)) != 1 ||
+            EVP_EncryptFinal_ex(aes_ctx, ciphertext + ciphertext_len, &ciphertext_len) != 1) {
+            std::cerr << "Encryption failed." << std::endl;
+            // EC_KEY_free(ec_key);
+            delete[] shared_secret;
+            delete[] ciphertext;
+            EVP_CIPHER_CTX_free(aes_ctx);
+            return nullptr;
+        }
+
+        EVP_CIPHER_CTX_free(aes_ctx);
+        delete[] shared_secret;
+        // Clean up memory
+        EVP_PKEY_CTX_free(ctx);
+        EC_KEY_free(ec_privkey);
+        EC_KEY_free(ec_pubkey);
+        return reinterpret_cast<char *>(ciphertext);
+    }
+
+char *decrypt_ecdh(const char *pub_file, const char *priv_file, const char *encrypted_message) {
+    FILE *file = fopen(priv_file, "r");
+    EC_KEY *ec_privkey = PEM_read_ECPrivateKey(file, nullptr, nullptr, nullptr);
+    fclose(file);
+    FILE *f = fopen(pub_file, "r");
+    EC_KEY *ec_pubkey = PEM_read_EC_PUBKEY(f, NULL, NULL, NULL);
+    fclose(f);
+
+    if (!ec_pubkey || !ec_privkey) {
+        std::cerr << "Encryption Error: Failed to read EC public or private keys." << std::endl;
+        return nullptr;
+    }
+    // Create EVP_PKEY objects from EC_KEY objects
+    EVP_PKEY* evp_privkey = EVP_PKEY_new();
+    EVP_PKEY* evp_pubkey = EVP_PKEY_new();
+    if (!EVP_PKEY_assign_EC_KEY(evp_privkey, ec_privkey) || !EVP_PKEY_assign_EC_KEY(evp_pubkey, ec_pubkey)) {
+        // Handle error
+        std::cout << "Encryption Error: EC keys don't exist" << std::endl;
+        EVP_PKEY_free(evp_privkey);
+        EVP_PKEY_free(evp_pubkey);
+        return nullptr;
+    }
+    
+    const EC_GROUP *ec_pubgroup = EC_KEY_get0_group(ec_pubkey);
+    size_t pubkey_len = EC_GROUP_get_degree(ec_pubgroup) / 8;
+    const EC_GROUP *ec_privgroup = EC_KEY_get0_group(ec_privkey);
+    size_t privkey_len = EC_GROUP_get_degree(ec_privgroup) / 8;
+
+    if (!ec_pubkey) {
+        std::cerr << "Encryption Error: Failed to read EC public key." << std::endl;
+        return nullptr;
+    }
+
+    // Create ECDH context
+    EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(evp_privkey, NULL);
+    if (!ctx) {
+        // Handle error
+        EVP_PKEY_free(evp_privkey);
+        EVP_PKEY_free(evp_pubkey);
+        EC_KEY_free(ec_privkey);
+        EC_KEY_free(ec_pubkey);
+        return nullptr;
+    }
+
+    // Initialize the context for ECDH key derivation
+    if (EVP_PKEY_derive_init(ctx) <= 0) {
+        // Handle error
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(evp_privkey);
+        EVP_PKEY_free(evp_pubkey);
+        EC_KEY_free(ec_privkey);
+        EC_KEY_free(ec_pubkey);
+        return nullptr;
+    }
+
+    // Provide the peer's public key to the context
+    if (EVP_PKEY_derive_set_peer(ctx, evp_pubkey) <= 0) {
+        // Handle error
+        EVP_PKEY_CTX_free(ctx);
+        EC_KEY_free(ec_privkey);
+        EC_KEY_free(ec_pubkey);
+        return nullptr;
+    }
+
+    // Determine the size of the shared secret
+    size_t shared_secret_len;
+    if (EVP_PKEY_derive(ctx, NULL, &shared_secret_len) <= 0) {
+        // Handle error
+        EVP_PKEY_CTX_free(ctx);
+        EC_KEY_free(ec_privkey);
+        EC_KEY_free(ec_pubkey);
+        return nullptr;
+    }
+    // Allocate memory for the shared secret
+    unsigned char* shared_secret = new unsigned char[shared_secret_len];
+
+    // Derive the shared secret
+    if (EVP_PKEY_derive(ctx, shared_secret, &shared_secret_len) <= 0) {
+        // Handle error
+        delete[] shared_secret;
+        EVP_PKEY_CTX_free(ctx);
+        EC_KEY_free(ec_privkey);
+        EC_KEY_free(ec_pubkey);
         return nullptr;
     }
 
@@ -143,10 +335,9 @@ char *decrypt_ecdh(char *message, const char *priv_file) {
     const EVP_CIPHER *cipher = EVP_aes_256_cbc();
     const int block_size = EVP_CIPHER_block_size(cipher);
 
-    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
-    if (!ctx) {
+    EVP_CIPHER_CTX *aes_ctx = EVP_CIPHER_CTX_new();
+    if (!aes_ctx) {
         std::cerr << "Failed to create decryption context." << std::endl;
-        EC_KEY_free(ec_key);
         delete[] shared_secret;
         return nullptr;
     }
@@ -154,41 +345,44 @@ char *decrypt_ecdh(char *message, const char *priv_file) {
     unsigned char iv[block_size];
     memset(iv, 0, sizeof(iv));
 
-    unsigned char *plaintext = new unsigned char[strlen(message) + block_size];
+    unsigned char *plaintext = new unsigned char[strlen(encrypted_message) + block_size];
     int plaintext_len = 0;
 
-    if (EVP_DecryptInit_ex(ctx, cipher, NULL, shared_secret, iv) != 1 ||
-        EVP_DecryptUpdate(ctx, plaintext, &plaintext_len, reinterpret_cast<const unsigned char *>(message),
-                          strlen(message)) != 1 ||
-        EVP_DecryptFinal_ex(ctx, plaintext + plaintext_len, &plaintext_len) != 1) {
+    if (EVP_DecryptInit_ex(aes_ctx, cipher, NULL, shared_secret, iv) != 1 ||
+        EVP_DecryptUpdate(aes_ctx, plaintext, &plaintext_len, reinterpret_cast<const unsigned char *>(encrypted_message),
+                          strlen(encrypted_message)) != 1 ||
+        EVP_DecryptFinal_ex(aes_ctx, plaintext + plaintext_len, &plaintext_len) != 1) {
         std::cerr << "Decryption failed." << std::endl;
-        EC_KEY_free(ec_key);
         delete[] shared_secret;
         delete[] plaintext;
-        EVP_CIPHER_CTX_free(ctx);
+        EVP_CIPHER_CTX_free(aes_ctx);
         return nullptr;
     }
 
-    EVP_CIPHER_CTX_free(ctx);
-    EC_KEY_free(ec_key);
+    EVP_CIPHER_CTX_free(aes_ctx);
     delete[] shared_secret;
-
+    
+    EVP_PKEY_CTX_free(ctx);
+    EC_KEY_free(ec_privkey);
+    EC_KEY_free(ec_pubkey);
     return reinterpret_cast<char *>(plaintext);
 }
 
 int main() {
     const char *priv_file = "private_key.pem";
     const char *pub_file = "public_key.pem";
+    const char *priv_file2 = "private_key2.pem";
+    const char *pub_file2 = "public_key2.pem";
     generate_ecdh_key_pair(pub_file, priv_file);
-
+    generate_ecdh_key_pair(pub_file2, priv_file2);
     const char *message = "Hello, ECDH!";
     std::cout << "Original message: " << message << std::endl;
 
-    char *encrypted_message = encrypt_ecdh(pub_file, message);
+    char *encrypted_message = encrypt_ecdh(pub_file2, priv_file, message);
     if (encrypted_message) {
         std::cout << "Encrypted message: " << encrypted_message << std::endl;
 
-        char *decrypted_message = decrypt_ecdh(encrypted_message, priv_file);
+        char *decrypted_message = decrypt_ecdh(pub_file, priv_file2, encrypted_message);
         if (decrypted_message) {
             std::cout << "Decrypted message: " << decrypted_message << std::endl;
             delete[] decrypted_message;
