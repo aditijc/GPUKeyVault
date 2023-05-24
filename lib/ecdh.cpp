@@ -50,16 +50,6 @@ unsigned char* get_shared_secret(const char *priv_file, const char *pub_file) {
         return nullptr;
     }
     
-    const EC_GROUP *ec_pubgroup = EC_KEY_get0_group(ec_pubkey);
-    size_t pubkey_len = EC_GROUP_get_degree(ec_pubgroup) / 8;
-    const EC_GROUP *ec_privgroup = EC_KEY_get0_group(ec_privkey);
-    size_t privkey_len = EC_GROUP_get_degree(ec_privgroup) / 8;
-
-    if (!ec_pubkey) {
-        std::cerr << "Encryption Error: Failed to read EC public key." << std::endl;
-        return nullptr;
-    }
-
     // Create ECDH context
     EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(evp_privkey, NULL);
     if (!ctx) {
