@@ -1,2 +1,6 @@
 # Ignore output binaries
 bin
+# Ignore local settings
+.vscode
+# Ignore generated keys
+*.pem
