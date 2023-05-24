@@ -1,5 +1,5 @@
 CC := g++
-CFLAGS := -lssl -lcrypto -lgmp -lgmpxx
+CFLAGS := -lssl -lcrypto -Wno-deprecated-declarations
 BUILDDIR := bin
 LIB := -L lib
 INC := -I include
@@ -11,18 +11,14 @@ install:
 	@echo "Installing OpenSSL Dependencies"
 	apt-get install openssl
 	apt-get install libssl-dev
-	@echo "Installing DSA Dependencies for large integers"
-	apt-get install libgmp-dev
 
 all: $(BUILDDIR)
-	$(CC) lib/dsa.cpp -o $(BUILDDIR)/dsa $(CFLAGS)
+	$(CC) lib/dh.cpp -o $(BUILDDIR)/dh $(CFLAGS) $(LIB) $(INC)
 
 test: $(BUILDDIR)
-	@echo "$(CC) $(CFLAGS) test/tester.cpp -o $(BUILDDIR)/tester"
 	$(CC) $(CFLAGS) test/tester.cpp -o $(BUILDDIR)/tester
-	@echo "$(BUILDDIR)/tester"
 	$(BUILDDIR)/tester
 
 clean: 
-	@echo " Cleaning..."; 
-	@echo " $(RM) -r $(BUILDDIR) "; $(RM) -r $(BUILDDIR) 
+	@echo "Cleaning...";
+	$(RM) -r $(BUILDDIR) 
