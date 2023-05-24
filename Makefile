@@ -23,7 +23,7 @@ all: $(BUILDDIR)
 	$(CC) lib/aes.cpp lib/ecdh.cpp -o $(BUILDDIR)/ecdh $(CFLAGS) $(LIB) $(INC)
 
 build: all
-	$(CC) src/main.cpp -o $(BUILDDIR)/main $(CFLAGS) $(LIB) $(INC);
+	$(CC) lib/interface.cpp src/main.cpp -o $(BUILDDIR)/main $(CFLAGS) $(LIB) $(INC);
 
 test: $(BUILDDIR)
 	$(CC) $(CFLAGS) test/tester.cpp -o $(BUILDDIR)/tester
@@ -31,6 +31,6 @@ test: $(BUILDDIR)
 
 clean: 
 	@echo "Cleaning...";
-	$(RM) -r $(BUILDDIR) 
+	$(RM) -r $(BUILDDIR)
 	@echo "Removing extraneous .pem files"
 	$(RM) -f *.pem 
