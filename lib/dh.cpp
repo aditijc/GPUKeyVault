@@ -134,9 +134,11 @@ void generate_dh_key_pair(const char* pub_file, const char* priv_file) {
 }
 
 char *encrypt_dh(const char *pub_file, const char *priv_file, const char *message) {
+    OpenSSL_add_all_algorithms();
     FILE *pub_fp = fopen(pub_file, "r");
     if (!pub_fp) {
         // Error handling
+        perror("Failed to open public key file");
         return NULL;
     }
     
@@ -146,6 +148,7 @@ char *encrypt_dh(const char *pub_file, const char *priv_file, const char *messag
     FILE *priv_fp = fopen(priv_file, "r");
     if (!priv_fp) {
         // Error handling
+        perror("Failed to open private key file");
         EVP_PKEY_free(pub_key);
         return NULL;
     }
@@ -155,11 +158,13 @@ char *encrypt_dh(const char *pub_file, const char *priv_file, const char *messag
 
     if (!priv_key) {
         std::cerr << "Encryption Error: Failed to read private key." << std::endl;
+        return NULL;
     }
-
+    
     EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(priv_key, NULL);
     if (!ctx) {
         // Error handling
+        std::cerr << "Failed to create EVP_PKEY_CTX." << std::endl;
         EVP_PKEY_free(pub_key);
         EVP_PKEY_free(priv_key);
         return NULL;
@@ -167,19 +172,19 @@ char *encrypt_dh(const char *pub_file, const char *priv_file, const char *messag
 
     if (EVP_PKEY_derive_init(ctx) <= 0) {
         // Handle error
+        std::cerr << "Failed to initialize key derivation." << std::endl;
         EVP_PKEY_CTX_free(ctx);
         EVP_PKEY_free(pub_key);
         EVP_PKEY_free(priv_key);
         return nullptr;
     }
-    
     // Provide the peer's public key to the context
     if (EVP_PKEY_derive_set_peer(ctx, pub_key) <= 0) {
         // Handle error
+        std::cerr << "Failed to set peer's public key." << std::endl;
         EVP_PKEY_CTX_free(ctx);
         EVP_PKEY_free(pub_key);
         EVP_PKEY_free(priv_key);
-        std::cout << "THIS IS WHERE WE LEFT OFF"<< std::endl;
         return nullptr;
     }
     // Determine the size of the shared secret
