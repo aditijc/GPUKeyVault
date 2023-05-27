@@ -2,34 +2,10 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <fstream>
+#include <streambuf>
 #include "ecdh.h"
-
-const std::vector<std::string> algs = {"ecdh"};
-
-void display_encryption_modes() {
-    for (auto i: algs) {
-            std::cout << i << ' ';
-        }
-    std::cout << std::endl;
-}
-
-void display_help() {
-    std::cout << "GPUKeyGen provides encryption and decryption algorithms and public/private key generation and storage." << std::endl;
-    std::cout << "USAGE: [encryption mode] [-c|-g] [-e FILE|-d FILE|-n] [-pub PUB-KEY] [-priv PRIV-KEY]" << std::endl << std::endl;
-    std::cout << "ENCRYPTION MODES: ";
-    display_encryption_modes();
-    std::cout << std::endl;
-    std::cout << "OPTIONS:" << std::endl;
-    std::cout << "  -h: display the help menu." << std::endl;
-    std::cout << "  -l: list all available public/private key pairs." << std::endl;
-    std::cout << "  -c: CPU mode." << std::endl;
-    std::cout << "  -g: GPU mode." << std::endl;
-    std::cout << "  -e: Encrypt. Proceeding argument is assumed to be file path containing text to encrypt." << std::endl;
-    std::cout << "  -d: Decrypt. Proceeding argument is assumed to be file path containing text to decrypt." << std::endl;   
-    std::cout << "  -n: Generate a new public/private key pair." << std::endl;
-    std::cout << "  -pub: Public key to be used. Must be specified when encrypting or decrypting." << std::endl;
-    std::cout << "  -priv: Private key to be used. Must be specified when encrypting or decrypting." << std::endl;    
-}
+#include "interface.h"
 
 int main(int argc, char *argv[]) {
     std::vector<std::string> args;
@@ -78,7 +54,19 @@ int main(int argc, char *argv[]) {
         std::cout << "Third argument must indicate encrypting, decrypting, or generating new keys [-e|-d|-n].";        
     }
 
-    
+    operations mode = ENCRYPT;
+    if (args.at(2) == "d") {
+        mode = DECRYPT;
+    } else {
+        mode = NEW;
+    }
+
+    // If we are encrypting or decrypting, check that the next argument is a valid file. 
+    if (mode == ENCRYPT || mode == DECRYPT) {
+        std::ifstream file(args.at(3));
+        std::string str((std::istreambuf_iterator<char>(file)),
+                        std::istreambuf_iterator<char>());
+    }
 
 
     return 0;
