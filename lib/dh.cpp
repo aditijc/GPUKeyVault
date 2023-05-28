@@ -13,8 +13,7 @@
 //     if (ctx == NULL) {
 //         std::cout << "context" << std::endl;
 //     }
-//     EVP_PKEY_CTX_set_dh_nid(ctx, NID_X9_62_prime256v1);
-
+//     EVP_PKEY_CTX_set_dh_nid(ctx, NID_X9_62_prime256v1)
 //     EVP_PKEY *pkey = NULL;
 //     EVP_PKEY_keygen_init(ctx);
 //     if (EVP_PKEY_keygen(ctx, &pkey) <= 0) {
@@ -30,10 +29,8 @@
 //         EVP_PKEY_free(pkey);
 //         return;
 //     }
-    
 //     PEM_write_PUBKEY(pub_fp, pkey);
-//     fclose(pub_fp);
-
+//     fclose(pub_fp)
 //     FILE *priv_fp = fopen(priv_file, "w");
 //     if (!priv_fp) {
 //         // Error handling
@@ -41,17 +38,11 @@
 //         EVP_PKEY_free(pkey);
 //         return;
 //     }
-    
 //     PEM_write_PrivateKey(priv_fp, pkey, NULL, NULL, 0, NULL, NULL);
-//     fclose(priv_fp);
-
+//     fclose(priv_fp)
 //     EVP_PKEY_CTX_free(ctx);
 //     EVP_PKEY_free(pkey);
 // }
-
-#include <openssl/dh.h>
-#include <openssl/pem.h>
-#include <iostream>
 
 void generate_dh_key_pair(const char* pub_file, const char* priv_file) {
     DH* dh_params = DH_new();

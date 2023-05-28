@@ -8,17 +8,9 @@
 #include <iostream>
 #include <cassert>
 #include <cstring>
-#include "aes.h"
-
-
-#include <iostream>
 #include <vector>
-#include <cstring>
-#include <openssl/evp.h>
 #include <openssl/rand.h>
-#include <openssl/bio.h>
-#include <openssl/evp.h>
-#include <openssl/pem.h>
+#include "aes.h"
 
 // AES key size in bits
 const int AES_KEY_SIZE = 256;  // 256 bits
@@ -40,7 +32,7 @@ std::vector<unsigned char> generate_aes_key_helper() {
     return key;
 }
 
-std::string aes_default_keygen(const std::vector<unsigned char>& data) {
+unsigned char *aes_default_keygen(const std::vector<unsigned char>& data) {
     BIO* bio = BIO_new(BIO_s_mem());
     BIO* b64 = BIO_new(BIO_f_base64());
     BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
@@ -53,14 +45,13 @@ std::string aes_default_keygen(const std::vector<unsigned char>& data) {
     std::string base64Data(encodedData, length);
 
     BIO_free_all(b64);
-
-    return base64Data;
+    unsigned char* data = reinterpret_cast<unsigned char*>(base64Data.data());
+    return data;
 }
 
 char *aes_encrypt(unsigned char *shared_secret, size_t shared_secret_len, const char *message) {
     const EVP_CIPHER *cipher = EVP_aes_256_cbc();
     const int block_size = EVP_CIPHER_block_size(cipher);
-
     EVP_CIPHER_CTX *aes_ctx = EVP_CIPHER_CTX_new();
     if (!aes_ctx) {
         std::cerr << "Encryption Error: Failed to create encryption context." << std::endl;
@@ -95,7 +86,7 @@ char *aes_decrypt(unsigned char *shared_secret, const char *encrypted_message) {
     // Perform symmetric decryption using the shared secret
     const EVP_CIPHER *cipher = EVP_aes_256_cbc();
     const int block_size = EVP_CIPHER_block_size(cipher);
-
+    unsigned char *shared_secret = reinterpret_cast<unsigned char*>(shared_secret_string.data());
     EVP_CIPHER_CTX *aes_ctx = EVP_CIPHER_CTX_new();
     if (!aes_ctx) {
         std::cerr << "Failed to create decryption context." << std::endl;

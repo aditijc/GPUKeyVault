@@ -27,7 +27,7 @@ void generate_ecdh_key_pair(const char *pub_file, const char *priv_file) {
     EC_KEY_free(ec_key);
 }
 
-unsigned char* get_shared_secret(const char *priv_file, const char *pub_file) {
+unsigned char *get_shared_secret(const char *priv_file, const char *pub_file) {
     FILE *file = fopen(priv_file, "r");
     EC_KEY *ec_privkey = PEM_read_ECPrivateKey(file, nullptr, nullptr, nullptr);
     fclose(file);
