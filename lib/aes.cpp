@@ -49,23 +49,6 @@ unsigned char *aes_default_keygen(const std::vector<unsigned char>& data) {
     return key;
 }
 
-int main() {
-    // Generate a 256-bit AES key
-    std::vector<unsigned char> aesKey = generate_aes_key_helper();
-
-    // Print the key size
-    std::cout << "Aes Key Size: " << AES_KEY_SIZE << std::endl;
-
-    // Convert the key to Base64
-    unsigned char *base64Key = aes_default_keygen(aesKey);
-
-    // Print the Base64 key
-    std::cout << "Here is the Aes key in Base64:" << std::endl;
-    std::cout << base64Key << std::endl;
-
-    return 0;
-}
-
 char *aes_encrypt(unsigned char *shared_secret, size_t shared_secret_len, const char *message) {
     const EVP_CIPHER *cipher = EVP_aes_256_cbc();
     const int block_size = EVP_CIPHER_block_size(cipher);
