@@ -20,5 +20,7 @@ void display_help() {
     std::cout << "  -g: GPU mode." << std::endl;
     std::cout << "  -e: Encrypt. Proceeding argument is assumed to be file path containing text to encrypt." << std::endl;
     std::cout << "  -d: Decrypt. Proceeding argument is assumed to be file path containing text to decrypt." << std::endl;   
-    std::cout << "  -n: Generate a new public/private key pair." << std::endl;  
+    std::cout << "  -n: Generate a new public/private key pair." << std::endl << std::endl;  
+    std::cout << "[PUB-KEY]: a pem file containing a public key. Assumed to be located in public-keys directory." << std::endl;
+    std::cout << "[PRIV-KEY]: a pem file containing a private key. Assumed to be located in private-keys directory." << std::endl;
 }

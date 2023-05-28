@@ -120,33 +120,3 @@ char *decrypt_ecdh(const char *pub_file, const char *priv_file, const char *encr
     unsigned char* shared_secret = get_shared_secret(priv_file, pub_file);
     return aes_decrypt(shared_secret, encrypted_message);    
 }
-
-// int main() {
-//     const char *priv_file = "private_key.pem";
-//     const char *pub_file = "public_key.pem";
-//     const char *priv_file2 = "private_key2.pem";
-//     const char *pub_file2 = "public_key2.pem";
-//     generate_ecdh_key_pair(pub_file, priv_file);
-//     generate_ecdh_key_pair(pub_file2, priv_file2);
-//     const char *message = "Hello, ECDH!";
-//     std::cout << "Original message: " << message << std::endl;
-
-//     char *encrypted_message = encrypt_ecdh(pub_file2, priv_file, message);
-//     if (encrypted_message) {
-//         std::cout << "Encrypted message: " << encrypted_message << std::endl;
-
-//         char *decrypted_message = decrypt_ecdh(pub_file, priv_file2, encrypted_message);
-//         if (decrypted_message) {
-//             std::cout << "Decrypted message: " << decrypted_message << std::endl;
-//             delete[] decrypted_message;
-//         } else {
-//             std::cerr << "Failed to decrypt the message." << std::endl;
-//         }
-
-//         delete[] encrypted_message;
-//     } else {
-//         std::cerr << "Failed to encrypt the message." << std::endl;
-//     }
-
-//     return 0;
-// }
