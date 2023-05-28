@@ -13,6 +13,7 @@ void ce();
 long int cd(long int);
 void encrypt();
 void decrypt();
+
 int prime(long int pr)
 {
     int i;

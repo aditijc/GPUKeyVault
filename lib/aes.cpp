@@ -10,9 +10,77 @@
 #include <cstring>
 #include "aes.h"
 
+
+#include <iostream>
+#include <vector>
+#include <cstring>
+#include <openssl/evp.h>
+#include <openssl/rand.h>
+#include <openssl/bio.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
+
+// AES key size in bits
+const int AES_KEY_SIZE = 256;  // 256 bits
+
 // char *aes_default_keygen() {
 //     // generates default symmetric session key and returns
+
 // }
+
+std::vector<unsigned char> generate_aes_key_helper() {
+    std::vector<unsigned char> key(AES_KEY_SIZE / 8);
+
+    // Generate the AES key
+    if (RAND_bytes(key.data(), key.size()) != 1) {
+        std::cerr << "Error generating AES key." << std::endl;
+        // Handle the error case appropriately
+    }
+
+    return key;
+}
+
+std::string aes_default_keygen(const std::vector<unsigned char>& data) {
+    BIO* bio = BIO_new(BIO_s_mem());
+    BIO* b64 = BIO_new(BIO_f_base64());
+    BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+    BIO_push(b64, bio);
+    BIO_write(b64, data.data(), data.size());
+    BIO_flush(b64);
+
+    char* encodedData;
+    long length = BIO_get_mem_data(bio, &encodedData);
+    std::string base64Data(encodedData, length);
+
+    BIO_free_all(b64);
+
+    return base64Data;
+}
+
+int main() {
+    // Allocate memory for the AES key
+    char* aesKey = new char[AES_KEY_SIZE / 8];
+
+    // Generate a 256-bit AES key
+    generateAesKey(aesKey);
+
+    // Print the key size
+    std::cout << "Aes Key Size: " << AES_KEY_SIZE << std::endl;
+
+    // Convert the key to Base64
+    std::string base64Key = base64Encode(aesKey, AES_KEY_SIZE / 8);
+
+    // Print the Base64 key
+    std::cout << "Here is the Aes key in Base64:" << std::endl;
+    std::cout << base64Key << std::endl;
+
+    // Clean up allocated memory
+    delete[] aesKey;
+
+    return 0;
+}
+
+
 
 char *aes_encrypt(unsigned char *shared_secret, size_t shared_secret_len, const char *message) {
     const EVP_CIPHER *cipher = EVP_aes_256_cbc();
