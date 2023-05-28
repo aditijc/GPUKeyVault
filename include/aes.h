@@ -22,7 +22,7 @@
 
 std::vector<unsigned char> generate_aes_key_helper();
 
-std::string aes_default_keygen(const std::vector<unsigned char>& data);
+unsigned char *aes_default_keygen(const std::vector<unsigned char>& data);
 
 
 char *aes_encrypt(unsigned char *shared_secret, size_t shared_secret_len, const char *message);
