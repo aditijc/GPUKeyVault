@@ -61,16 +61,8 @@ int main() {
 
     // Print the Base64 key
     std::cout << "Here is the Aes key in Base64:" << std::endl;
-    std::cout << sizeof(base64Key) << std::endl;
-    const char *message = "hello rsa!";
-    char *encrypted = aes_encrypt(base64Key, sizeof(base64Key), message);
-    // Print the Encrypted Message
-    std::cout << "Here is the Encrypted Message:" << std::endl;
-    std::cout << message << std::endl;
-    char *decrypted = aes_decrypt(base64Key, encrypted);
-    // Print the Decrypted Message
-    std::cout << "Here is the Decrypted Message:" << std::endl;
-    std::cout << decrypted << std::endl;
+    std::cout << base64Key << std::endl;
+
     return 0;
 }
 
