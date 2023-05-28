@@ -61,8 +61,16 @@ int main() {
 
     // Print the Base64 key
     std::cout << "Here is the Aes key in Base64:" << std::endl;
-    std::cout << base64Key << std::endl;
-
+    std::cout << sizeof(base64Key) << std::endl;
+    const char *message = "hello rsa!";
+    char *encrypted = aes_encrypt(base64Key, sizeof(base64Key), message);
+    // Print the Encrypted Message
+    std::cout << "Here is the Encrypted Message:" << std::endl;
+    std::cout << message << std::endl;
+    char *decrypted = aes_decrypt(base64Key, encrypted);
+    // Print the Decrypted Message
+    std::cout << "Here is the Decrypted Message:" << std::endl;
+    std::cout << decrypted << std::endl;
     return 0;
 }
 
@@ -72,8 +80,7 @@ char *aes_encrypt(unsigned char *shared_secret, size_t shared_secret_len, const 
     EVP_CIPHER_CTX *aes_ctx = EVP_CIPHER_CTX_new();
     if (!aes_ctx) {
         std::cerr << "Encryption Error: Failed to create encryption context." << std::endl;
-        // EC_KEY_free(ec_pubkey);
-        delete[] shared_secret;
+        // delete[] shared_secret;
         return nullptr;
     }
 
@@ -87,15 +94,13 @@ char *aes_encrypt(unsigned char *shared_secret, size_t shared_secret_len, const 
         EVP_EncryptUpdate(aes_ctx, ciphertext, &ciphertext_len, reinterpret_cast<const unsigned char *>(message),
         strlen(message)) != 1 || EVP_EncryptFinal_ex(aes_ctx, ciphertext + ciphertext_len, &ciphertext_len) != 1) {
         std::cerr << "Encryption failed." << std::endl;
-        // EC_KEY_free(ec_key);
-        delete[] shared_secret;
-        delete[] ciphertext;
+        // delete[] shared_secret;
+        // delete[] ciphertext;
         EVP_CIPHER_CTX_free(aes_ctx);
         return nullptr;
     }
 
     EVP_CIPHER_CTX_free(aes_ctx);
-    delete[] shared_secret;
     return reinterpret_cast<char *>(ciphertext);
 }
 
@@ -103,11 +108,10 @@ char *aes_decrypt(unsigned char *shared_secret, const char *encrypted_message) {
     // Perform symmetric decryption using the shared secret
     const EVP_CIPHER *cipher = EVP_aes_256_cbc();
     const int block_size = EVP_CIPHER_block_size(cipher);
-    unsigned char *shared_secret = reinterpret_cast<unsigned char*>(shared_secret_string.data());
     EVP_CIPHER_CTX *aes_ctx = EVP_CIPHER_CTX_new();
     if (!aes_ctx) {
         std::cerr << "Failed to create decryption context." << std::endl;
-        delete[] shared_secret;
+        // delete[] shared_secret;
         return nullptr;
     }
 
@@ -122,13 +126,13 @@ char *aes_decrypt(unsigned char *shared_secret, const char *encrypted_message) {
                           strlen(encrypted_message)) != 1 ||
         EVP_DecryptFinal_ex(aes_ctx, plaintext + plaintext_len, &plaintext_len) != 1) {
         std::cerr << "Decryption failed." << std::endl;
-        delete[] shared_secret;
-        delete[] plaintext;
+        // delete[] shared_secret;
+        // delete[] plaintext;
         EVP_CIPHER_CTX_free(aes_ctx);
         return nullptr;
     }
 
     EVP_CIPHER_CTX_free(aes_ctx);
-    delete[] shared_secret;
+    // delete[] shared_secret;
     return reinterpret_cast<char *>(plaintext);
 }
