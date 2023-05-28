@@ -66,8 +66,6 @@ int main(int argc, char *argv[]) {
     const char *message;
     char pub_file_mod[1000];
     char priv_file_mod[1000];
-    std::string pub_dir = "public-keys/";
-    std::string priv_dir = "private-keys/";
     if (mode == ENCRYPT || mode == DECRYPT) {
         std::ifstream file(args.at(3));
         if (!file) {
@@ -77,10 +75,10 @@ int main(int argc, char *argv[]) {
         std::string str((std::istreambuf_iterator<char>(file)),
                         std::istreambuf_iterator<char>());
         message = str.c_str();
-        strcpy(pub_file_mod, pub_dir.c_str());
+        strcpy(pub_file_mod, PUB_DIR.c_str());
         strcat(pub_file_mod, args.at(4).c_str());
 
-        strcpy(priv_file_mod, priv_dir.c_str());
+        strcpy(priv_file_mod, PRIV_DIR.c_str());
         strcat(priv_file_mod, args.at(5).c_str());
 
         std::ifstream file1(pub_file_mod);
@@ -98,10 +96,10 @@ int main(int argc, char *argv[]) {
 
     } else {
         // We are creating a new public private key pair, so we do not need to specify a message file.
-        strcpy(pub_file_mod, pub_dir.c_str());
+        strcpy(pub_file_mod, PUB_DIR.c_str());
         strcat(pub_file_mod, args.at(3).c_str());
 
-        strcpy(priv_file_mod, priv_dir.c_str());
+        strcpy(priv_file_mod, PRIV_DIR.c_str());
         strcat(priv_file_mod, args.at(4).c_str());
     }
 
@@ -123,5 +121,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    free(pub_file_mod);
+    free(priv_file_mod);
     return 0;
 }
