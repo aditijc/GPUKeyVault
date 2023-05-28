@@ -57,7 +57,7 @@ int main() {
     std::cout << "Aes Key Size: " << AES_KEY_SIZE << std::endl;
 
     // Convert the key to Base64
-    std::string base64Key = aes_default_keygen(aesKey);
+    unsigned char *base64Key = aes_default_keygen(aesKey);
 
     // Print the Base64 key
     std::cout << "Here is the Aes key in Base64:" << std::endl;
