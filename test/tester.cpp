@@ -2,6 +2,7 @@
 #include <cassert>
 #include <string>
 #include "ecdh.h"
+#include "aes.h"
 
 void test_ecdh() {
     const char *pub_file = "public-keys/ecdh_public_demo.pem";
@@ -22,7 +23,24 @@ void test_ecdh() {
     std::cout << "Message decrypted correctly" << std::endl;
 }
 
+void test_rsa_aes() {
+    std::string plainText = "Hello, World!";
+    std::string key = "0123456789abcdef0123456789abcdef"; // AES-256 key
+
+    std::string encryptedText = aes_default_encrypt(plainText, key);
+
+    std::cout << "Plain Text: " << plainText << std::endl;
+    std::cout << "Encrypted Text: " << encryptedText << std::endl;
+
+    std::string decryptedText = aes_default_decrypt(encryptedText, key);
+
+    std::cout << "Decrypted Text: " << decryptedText << std::endl;
+}
+
 int main() {
+    std::cout << "Testing ECDH Encryption and Decryption" << std::endl;
     test_ecdh();
+    std::cout << "\nTesting Default AES Encryption and Decryption" << std::endl;
+    test_rsa_aes();
     return 0;
 }

@@ -3,6 +3,7 @@
 #include<math.h>
 #include<string.h>
 #include<stdlib.h>
+#include <openssl/pem.h>
  
 using namespace std;
  
@@ -25,6 +26,37 @@ int prime(long int pr)
     }
     return 1;
 }
+
+void saveKeysToPEM(const char *pubKey, const char *privKey, const std::string& pubFilePath, const std::string& privFilePath) {
+    
+    FILE* pubFile = fopen(pubFilePath.c_str(), "w");
+    if (!pubFile) {
+        std::cerr << "Error opening public file for writing." << std::endl;
+        return;
+    }
+    FILE* privFile = fopen(privFilePath.c_str(), "w");
+    if (!privFile) {
+        std::cerr << "Error opening private file for writing." << std::endl;
+        return;
+    }
+
+    fputs("-----BEGIN PUBLIC KEY-----\n", pubFile);
+    if (fputs(pubKey, pubFile) == EOF) {
+        std::cerr << "Error writing data to PEM file." << std::endl;
+    }
+    fputs("\n-----END PUBLIC KEY-----", pubFile);
+
+    fputs("-----BEGIN PRIVATE KEY-----\n", privFile);
+    if (fputs(privKey, privFile) == EOF) {
+        std::cerr << "Error writing data to PEM file." << std::endl;
+    }
+    fputs("\n-----END PRIVATE KEY-----", privFile);
+
+    // Close the PEM file
+    fclose(pubFile);
+    fclose(privFile);
+}
+
 int main()
 {
     cout << "\nEnter the first prime number:\n";
@@ -54,6 +86,7 @@ int main()
     cout << "\nThe public key and the private key are:\n";
     for (i = 0; i < 1; i++)
         cout << e[i] << "\t" << d[i] << "\n";
+    saveKeysToPEM(std::to_string(e[i]).c_str(), std::to_string(d[i]).c_str(), "public-keys/rsa_private_demo.pem", "private-keys/rsa_private_demo.pem");
     encrypt();
     decrypt();
     return 0;
@@ -114,7 +147,7 @@ void encrypt()
     en[i] = -1;
     cout << "\nThe encrypted message is: \n";
     for (i = 0; en[i] != -1; i++)
-        printf("%c", en[i]);
+        printf("%ld", en[i]);
 }
 void decrypt()
 {
@@ -135,6 +168,8 @@ void decrypt()
     }
     m[i] = -1;
     cout << "\nThe decrypted message is:\n";
+    std::string out = "";
     for (i = 0; m[i] != -1; i++)
-        printf("%c", m[i]);
+        out += (char) m[i];
+    printf("%s\n", out.c_str());
 }
