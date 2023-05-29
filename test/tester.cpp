@@ -25,7 +25,7 @@ void test_ecdh() {
 
 void test_rsa_aes() {
     std::string plainText = "Hello, World!";
-    std::string key = "0123456789abcdef0123456789abcdef"; // AES-256 key
+    std::string key = generate_aes_key(); // AES-256 key
 
     std::string encryptedText = aes_default_encrypt(plainText, key);
 

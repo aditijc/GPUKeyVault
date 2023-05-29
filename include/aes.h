@@ -29,6 +29,8 @@ char *aes_encrypt(unsigned char *shared_secret, size_t shared_secret_len, const 
 
 char *aes_decrypt(unsigned char *shared_secret, const char *encrypted_message);
 
+std::string generate_aes_key();
+
 std::string aes_default_encrypt(const std::string& plainText, const std::string& key);
 
 std::string aes_default_decrypt(const std::string& encryptedText, const std::string& key);
