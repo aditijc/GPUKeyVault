@@ -3,6 +3,7 @@
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
+#include "rsa.h"
 
 void generatePrimes(BIGNUM* p, BIGNUM* q) {
     BIGNUM* tmp = BN_new();
@@ -43,7 +44,27 @@ RSA* loadKeyFromPem(const std::string& filename, bool isPrivate) {
     return rsa;
 }
 
-std::string encrypt(RSA* rsa, const std::string& plaintext) {
+void rsa_keygen() {
+    RSA* rsa = RSA_new();
+    BIGNUM* p = BN_new();
+    BIGNUM* q = BN_new();
+
+    // Generate prime numbers
+    generatePrimes(p, q);
+
+    // Compute RSA keys
+    RSA_generate_key_ex(rsa, 2048, q, NULL);
+
+    // Save keys to PEM files
+    saveKeyToPem(rsa, "private-keys/rsa_private_demo.pem", true);
+    saveKeyToPem(rsa, "public-keys/rsa_public_demo.pem", false);
+
+    RSA_free(rsa);
+    BN_free(p);
+    BN_free(q);
+}
+
+std::string rsa_encrypt(RSA* rsa, const std::string& plaintext) {
     int rsaSize = RSA_size(rsa);
     std::string ciphertext;
     ciphertext.resize(rsaSize);
@@ -57,7 +78,7 @@ std::string encrypt(RSA* rsa, const std::string& plaintext) {
     return ciphertext;
 }
 
-std::string decrypt(RSA* rsa, const std::string& ciphertext) {
+std::string rsa_decrypt(RSA* rsa, const std::string& ciphertext) {
     int rsaSize = RSA_size(rsa);
     std::string plaintext;
     plaintext.resize(rsaSize);
@@ -72,31 +93,14 @@ std::string decrypt(RSA* rsa, const std::string& ciphertext) {
 }
 
 int main() {
-    RSA* rsa = RSA_new();
-    BIGNUM* p = BN_new();
-    BIGNUM* q = BN_new();
-
-    // Generate prime numbers
-    generatePrimes(p, q);
-
-    // Compute RSA keys
-    RSA_generate_key_ex(rsa, 2048, q, NULL);
-
-    // Save keys to PEM files
-    saveKeyToPem(rsa, "private_key.pem", true);
-    saveKeyToPem(rsa, "public_key.pem", false);
-
-    RSA_free(rsa);
-    BN_free(p);
-    BN_free(q);
-
+    rsa_keygen();
     // Load keys from PEM files
-    RSA* privateKey = loadKeyFromPem("private_key.pem", true);
-    RSA* publicKey = loadKeyFromPem("public_key.pem", false);
+    RSA* privateKey = loadKeyFromPem("private-keys/rsa_private_demo.pem", true);
+    RSA* publicKey = loadKeyFromPem("public-keys/rsa_public_demo.pem", false);
 
     std::string plaintext = "Hello, RSA!";
-    std::string encrypted = encrypt(publicKey, plaintext);
-    std::string decrypted = decrypt(privateKey, encrypted);
+    std::string encrypted = rsa_encrypt(publicKey, plaintext);
+    std::string decrypted = rsa_decrypt(privateKey, encrypted);
 
     std::cout << "Plaintext: " << plaintext << std::endl;
     std::cout << "Encrypted: " << encrypted << std::endl;
@@ -104,6 +108,5 @@ int main() {
 
     RSA_free(privateKey);
     RSA_free(publicKey);
-
     return 0;
 }

@@ -1,19 +1,15 @@
-
-#include<iostream>
-#include<math.h>
-#include<string.h>
-#include<stdlib.h>
+#include <iostream>
+#include <fstream>
+#include <openssl/bn.h>
+#include <openssl/rsa.h>
+#include <openssl/pem.h>
  
 using namespace std;
 
-int prime(long int prime_val);
+void rsa_keygen();
 
+RSA* loadKeyFromPem(const std::string& filename, bool isPrivate);
 
+std::string rsa_encrypt(RSA* rsa, const std::string& plaintext);
 
-char *generate_rsa_public_key(void);
-
-char *generate_rsa_private_key(void);
-
-char *encrypt_rsa(char *message, char *public_key);
-
-char *decrypt_rsa(char *message, char *private_key);
+std::string rsa_decrypt(RSA* rsa, const std::string& ciphertext);

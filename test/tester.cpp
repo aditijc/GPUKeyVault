@@ -3,6 +3,7 @@
 #include <string>
 #include "ecdh.h"
 #include "aes.h"
+#include "rsa.h"
 
 void test_ecdh() {
     const char *pub_file = "public-keys/ecdh_public_demo.pem";
@@ -23,6 +24,24 @@ void test_ecdh() {
     std::cout << "Message decrypted correctly" << std::endl;
 }
 
+// void test_rsa() {
+//     rsa_keygen();
+//     // Load keys from PEM files
+//     RSA* privateKey = loadKeyFromPem("private-keys/rsa_private_demo.pem", true);
+//     RSA* publicKey = loadKeyFromPem("public-keys/rsa_public_demo.pem", false);
+
+//     std::string plaintext = "Hello, RSA!";
+//     std::string encrypted = rsa_encrypt(publicKey, plaintext);
+//     std::string decrypted = rsa_decrypt(privateKey, encrypted);
+
+//     std::cout << "Plaintext: " << plaintext << std::endl;
+//     std::cout << "Encrypted: " << encrypted << std::endl;
+//     std::cout << "Decrypted: " << decrypted << std::endl;
+
+//     RSA_free(privateKey);
+//     RSA_free(publicKey);
+// }
+
 void test_rsa_aes() {
     std::string plainText = "Hello, World!";
     std::string key = generate_aes_key(); // AES-256 key
@@ -40,6 +59,8 @@ void test_rsa_aes() {
 int main() {
     std::cout << "Testing ECDH Encryption and Decryption" << std::endl;
     test_ecdh();
+    // std::cout << "\nTesting RSA Encryption and Decryption" << std::endl;
+    // test_rsa();
     std::cout << "\nTesting Default AES Encryption and Decryption" << std::endl;
     test_rsa_aes();
     return 0;
