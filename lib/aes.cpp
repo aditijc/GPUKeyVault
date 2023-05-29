@@ -1,26 +1,25 @@
-#include <openssl/ec.h>
-#include <openssl/ecdsa.h>
-#include <openssl/ecdh.h>
-#include <openssl/evp.h>
-#include <openssl/sha.h>
-#include <openssl/bio.h>
-#include <openssl/pem.h>
 #include <iostream>
-#include <cassert>
-#include <cstring>
-#include <vector>
+#include <openssl/aes.h>
 #include <openssl/rand.h>
-#include "aes.h"
+#include <openssl/bio.h>
+#include <openssl/evp.h>
+#include <openssl/buffer.h> // Include the Buffer header
+#include <cstring>
+#include <string>
+#include <vector>
 
-// AES key size in bits
-const int AES_KEY_SIZE = 256;  // 256 bits
 
-// char *aes_default_keygen() {
-//     // generates default symmetric session key and returns
+// need to figure out what to do with the IV thing --> has to be generated for every
+// plain text that we want to encrypt + every cipher we want to ecrypt
 
-// }
+// OR we can use the same intialization string for the IV each time
 
-std::vector<unsigned char> generate_aes_key_helper() {
+// Make sure to provide the key and IV strings in the correct format (e.g., hexadecimal) 
+// and with the appropriate lengths (32-byte key for AES-256 and 16-byte IV for AES-256 CBC).
+
+const int AES_KEY_SIZE = 256;  // AES-256
+
+std::string generate_aes_key() {
     std::vector<unsigned char> key(AES_KEY_SIZE / 8);
 
     // Generate the AES key
@@ -29,89 +28,172 @@ std::vector<unsigned char> generate_aes_key_helper() {
         // Handle the error case appropriately
     }
 
-    return key;
+    return std::string(key.begin(), key.end());
 }
 
-unsigned char *aes_default_keygen(const std::vector<unsigned char>& data) {
+
+// Function to perform AES encryption
+std::string encrypt(const std::string& algorithm, const std::string& input,
+                    const std::string& keyStr, const std::string& ivStr) {
+    const EVP_CIPHER* cipher = EVP_get_cipherbyname(algorithm.c_str());
+    if (cipher == nullptr) {
+        std::cerr << "Unsupported algorithm: " << algorithm << std::endl;
+        // Handle error appropriately
+    }
+
+    std::vector<unsigned char> key(keyStr.begin(), keyStr.end());
+    std::vector<unsigned char> iv(ivStr.begin(), ivStr.end());
+
+    EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+    if (ctx == nullptr) {
+        std::cerr << "Error creating cipher context." << std::endl;
+        // Handle error appropriately
+    }
+
+    if (EVP_EncryptInit_ex(ctx, cipher, nullptr, key.data(), iv.data()) != 1) {
+        std::cerr << "Error initializing encryption." << std::endl;
+        // Handle error appropriately
+    }
+
+    std::vector<unsigned char> ciphertext(input.size() + AES_BLOCK_SIZE);
+    int ciphertextLen = 0;
+
+    if (EVP_EncryptUpdate(ctx, ciphertext.data(), &ciphertextLen,
+                          reinterpret_cast<const unsigned char*>(input.c_str()), input.size()) != 1) {
+        std::cerr << "Error performing encryption." << std::endl;
+        // Handle error appropriately
+    }
+
+    int finalCiphertextLen = 0;
+    if (EVP_EncryptFinal_ex(ctx, ciphertext.data() + ciphertextLen, &finalCiphertextLen) != 1) {
+        std::cerr << "Error finalizing encryption." << std::endl;
+        // Handle error appropriately
+    }
+
+    ciphertextLen += finalCiphertextLen;
+
+    EVP_CIPHER_CTX_free(ctx);
+
+    std::string encodedCiphertext = base64Encode(ciphertext.data(), ciphertextLen);
+
+    return encodedCiphertext;
+}
+
+
+
+
+// Function to perform base64 encoding
+std::string base64Encode(const unsigned char* data, int size) {
     BIO* bio = BIO_new(BIO_s_mem());
     BIO* b64 = BIO_new(BIO_f_base64());
     BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
     BIO_push(b64, bio);
-    BIO_write(b64, data.data(), data.size());
+    BIO_write(b64, data, size);
     BIO_flush(b64);
 
-    char* encodedData;
-    long length = BIO_get_mem_data(bio, &encodedData);
-    std::string base64Data(encodedData, length);
+    BUF_MEM* mem = nullptr;
+    BIO_get_mem_ptr(b64, &mem);
+
+    std::string encodedString(mem->data, mem->length);
 
     BIO_free_all(b64);
-    unsigned char* key = reinterpret_cast<unsigned char*>(base64Data.data());
-    return key;
+
+    return encodedString;
 }
 
-char *aes_encrypt(unsigned char *shared_secret, size_t shared_secret_len, const char *message) {
-    const EVP_CIPHER *cipher = EVP_aes_256_cbc();
-    const int block_size = EVP_CIPHER_block_size(cipher);
-    EVP_CIPHER_CTX *aes_ctx = EVP_CIPHER_CTX_new();
-    if (!aes_ctx) {
-        std::cerr << "Encryption Error: Failed to create encryption context." << std::endl;
-        // EC_KEY_free(ec_pubkey);
-        delete[] shared_secret;
-        return nullptr;
+
+
+
+
+
+
+// Function to perform AES decryption
+std::string decrypt(const std::string& algorithm, const std::string& cipherText,
+                    const std::string& keyStr, const std::string& ivStr) {
+    const EVP_CIPHER* cipher = EVP_get_cipherbyname(algorithm.c_str());
+    if (cipher == nullptr) {
+        std::cerr << "Unsupported algorithm: " << algorithm << std::endl;
+        // Handle error appropriately
     }
 
-    unsigned char iv[block_size];
-    memset(iv, 0, sizeof(iv));
+    std::vector<unsigned char> key(keyStr.begin(), keyStr.end());
+    std::vector<unsigned char> iv(ivStr.begin(), ivStr.end());
 
-    unsigned char *ciphertext = new unsigned char[shared_secret_len + block_size];
-    int ciphertext_len = 0;
-
-    if (EVP_EncryptInit_ex(aes_ctx, cipher, NULL, shared_secret, iv) != 1 ||
-        EVP_EncryptUpdate(aes_ctx, ciphertext, &ciphertext_len, reinterpret_cast<const unsigned char *>(message),
-        strlen(message)) != 1 || EVP_EncryptFinal_ex(aes_ctx, ciphertext + ciphertext_len, &ciphertext_len) != 1) {
-        std::cerr << "Encryption failed." << std::endl;
-        // EC_KEY_free(ec_key);
-        delete[] shared_secret;
-        delete[] ciphertext;
-        EVP_CIPHER_CTX_free(aes_ctx);
-        return nullptr;
+    EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+    if (ctx == nullptr) {
+        std::cerr << "Error creating cipher context." << std::endl;
+        // Handle error appropriately
     }
 
-    EVP_CIPHER_CTX_free(aes_ctx);
-    delete[] shared_secret;
-    return reinterpret_cast<char *>(ciphertext);
+    if (EVP_DecryptInit_ex(ctx, cipher, nullptr, key.data(), iv.data()) != 1) {
+        std::cerr << "Error initializing decryption." << std::endl;
+        // Handle error appropriately
+    }
+
+    std::vector<unsigned char> decryptedText(cipherText.size());
+    int decryptedTextLen = 0;
+
+    if (EVP_DecryptUpdate(ctx, decryptedText.data(), &decryptedTextLen,
+                          reinterpret_cast<const unsigned char*>(cipherText.c_str()), cipherText.size()) != 1) {
+        std::cerr << "Error performing decryption." << std::endl;
+        // Handle error appropriately
+    }
+
+    int finalDecryptedTextLen = 0;
+    if (EVP_DecryptFinal_ex(ctx, decryptedText.data() + decryptedTextLen, &finalDecryptedTextLen) != 1) {
+        std::cerr << "Error finalizing decryption." << std::endl;
+        // Handle error appropriately
+    }
+
+    decryptedTextLen += finalDecryptedTextLen;
+
+    EVP_CIPHER_CTX_free(ctx);
+
+    return std::string(decryptedText.begin(), decryptedText.begin() + decryptedTextLen); // Convert vector to string
+
 }
 
-char *aes_decrypt(unsigned char *shared_secret, const char *encrypted_message) {
-    // Perform symmetric decryption using the shared secret
-    const EVP_CIPHER *cipher = EVP_aes_256_cbc();
-    const int block_size = EVP_CIPHER_block_size(cipher);
-    unsigned char *shared_secret = reinterpret_cast<unsigned char*>(shared_secret_string.data());
-    EVP_CIPHER_CTX *aes_ctx = EVP_CIPHER_CTX_new();
-    if (!aes_ctx) {
-        std::cerr << "Failed to create decryption context." << std::endl;
-        delete[] shared_secret;
-        return nullptr;
-    }
 
-    unsigned char iv[block_size];
-    memset(iv, 0, sizeof(iv));
 
-    unsigned char *plaintext = new unsigned char[strlen(encrypted_message) + block_size];
-    int plaintext_len = 0;
+// // AES key generation tester
+// int main() {
+//     std::string aesKey = generate_aes_key();
 
-    if (EVP_DecryptInit_ex(aes_ctx, cipher, NULL, shared_secret, iv) != 1 ||
-        EVP_DecryptUpdate(aes_ctx, plaintext, &plaintext_len, reinterpret_cast<const unsigned char *>(encrypted_message),
-                          strlen(encrypted_message)) != 1 ||
-        EVP_DecryptFinal_ex(aes_ctx, plaintext + plaintext_len, &plaintext_len) != 1) {
-        std::cerr << "Decryption failed." << std::endl;
-        delete[] shared_secret;
-        delete[] plaintext;
-        EVP_CIPHER_CTX_free(aes_ctx);
-        return nullptr;
-    }
+//     std::cout << "AES Key: " << aesKey << std::endl;
 
-    EVP_CIPHER_CTX_free(aes_ctx);
-    delete[] shared_secret;
-    return reinterpret_cast<char *>(plaintext);
-}
+//     return 0;
+// }
+
+
+
+
+// //tester for decryption
+// int main() {
+//     // Test data
+//     std::string algorithm = "aes-256-cbc";
+//     std::string cipherText = "j3oNqN9tj+nm2kZO+5fWqg==";  // Encrypted text in base64
+//     std::string keyStr = "0123456789abcdef0123456789abcdef";  // 32-byte key in hexadecimal
+//     std::string ivStr = "0123456789abcdef";  // 16-byte IV in hexadecimal
+
+//     std::string decryptedText = decrypt(algorithm, cipherText, keyStr, ivStr);
+
+//     std::cout << "Decrypted Text: " << decryptedText << std::endl;
+
+//     return 0;
+// }
+
+
+// // tester for encryption 
+// int main() {
+//     // Test data
+//     std::string algorithm = "aes-256-cbc";
+//     std::string input = "Hello, World!";
+//     std::string keyStr = "0123456789abcdef0123456789abcdef";  // 32-byte key in hexadecimal
+//     std::string ivStr = "0123456789abcdef";  // 16-byte IV in hexadecimal
+
+//     std::string encryptedText = encrypt(algorithm, input, keyStr, ivStr);
+
+//     std::cout << "Encrypted Text: " << encryptedText << std::endl;
+
+//     return 0;
+// }
