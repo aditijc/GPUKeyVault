@@ -12,9 +12,17 @@
 #include "aes.h"
 
 void generate_ecdh_key_pair(const char *pub_file, const char *priv_file) {
+
+    // 1. Consider parallelization strategies for CPU-bound tasks
+    //    e.g., utilizing multi-threading techniques like OpenMP
+
     EC_KEY *ec_key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
     assert(1 == EC_KEY_generate_key(ec_key));
     assert(1 == EC_KEY_check_key(ec_key));
+
+    // 2. Offload computationally intensive tasks to the GPU
+    //    (e.g., cryptographic operations performed using the generated keys)
+
 
     FILE *f1 = fopen(pub_file, "w");
     PEM_write_EC_PUBKEY(f1, ec_key);
@@ -23,6 +31,8 @@ void generate_ecdh_key_pair(const char *pub_file, const char *priv_file) {
     FILE *f2 = fopen(priv_file, "w");
     PEM_write_ECPrivateKey(f2, ec_key, NULL, NULL, 0, NULL, NULL);
     fclose(f2);
+
+    // 3. Manage data transfer between CPU and GPU memory
 
     EC_KEY_free(ec_key);
 }
@@ -107,6 +117,11 @@ unsigned char *get_shared_secret(const char *priv_file, const char *pub_file) {
     EVP_PKEY_CTX_free(ctx);
     EC_KEY_free(ec_privkey);
     EC_KEY_free(ec_pubkey);
+
+    // Offload shared secret calculation to GPU
+    // 1. Transfer private and public keys to GPU memory
+    // 2. Parallelize ECDH key derivation on the GPU
+    // 3. Manage data transfer between GPU and CPU memory
     return shared_secret;
 }
 
