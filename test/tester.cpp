@@ -52,12 +52,35 @@ void test_rsa_aes() {
     std::cout << "Decrypted Text: " << decryptedText << std::endl;
 }
 
+void test_rsa_pgp() {
+    const std::string pub_file = "public-keys/rsa_public.pem";
+    const std::string priv_file = "private-keys/rsa_private.pem";
+    std::string message = "hello";
+    std::cout << "Message: " << message << std::endl;
+    // char **aes_encrypted_key = (char **) malloc(sizeof(char *));
+    rsa_keygen(priv_file, pub_file);
+
+    std::string aes_key = generate_aes_key();
+    std::string encrypted_message = aes_default_encrypt(message, aes_key);
+    std::string aes_encrypted_key = rsa_encrypt(pub_file, aes_key);
+    
+    // std::string encrypted_message = rsa_pgp_encrypt(aes_encrypted_key, message, pub_file, priv_file);
+    std::cout << "Encrypted Message: " << encrypted_message << std::endl;
+
+    std::string decrypted_key = rsa_decrypt(priv_file, aes_encrypted_key);
+    std::string decrypted_message = aes_default_decrypt(encrypted_message, decrypted_key);
+    // std::string decrypted_message = rsa_pgp_decrypt(*aes_encrypted_key, encrypted_message, priv_file);
+    std::cout << "Decrypted Message: " << decrypted_message.c_str() << std::endl;
+}
+
 int main() {
-    std::cout << "Testing ECDH Encryption and Decryption" << std::endl;
-    test_ecdh();
-    std::cout << "\nTesting RSA Encryption and Decryption" << std::endl;
-    test_rsa();
-    std::cout << "\nTesting Default AES Encryption and Decryption" << std::endl;
-    test_rsa_aes();
+    // std::cout << "Testing RSA Encryption and Decryption" << std::endl;
+    // test_rsa();
+    // std::cout << "\nTesting Default AES Encryption and Decryption" << std::endl;
+    // test_rsa_aes();
+    std::cout << "\nTesting PGP Encryption and Decryption with RSA" << std::endl;
+    test_rsa_pgp();
+    // std::cout << "\nTesting PGP Encryption and Decryption with ECDH" << std::endl;
+    // test_ecdh();
     return 0;
 }
