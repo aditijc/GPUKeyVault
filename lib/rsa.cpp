@@ -94,24 +94,3 @@ std::string rsa_decrypt(const std::string private_file, const std::string& ciphe
 
     return plaintext;
 }
-
-std::string rsa_pgp_encrypt(char **aes_encrypted_key, const std::string message, const std::string pub_key_file, const std::string priv_key_file) {
-    std::string aes_key = generate_aes_key();
-    // std::cout << "\n!!!aeskey: " << aes_key << std::endl;
-    std::string encrypted_message = aes_default_encrypt(message, aes_key);
-    std::string ekey = rsa_encrypt(pub_key_file, aes_key);
-    *aes_encrypted_key = (char *) malloc(sizeof((char *)ekey.c_str()));
-    *aes_encrypted_key = (char *)ekey.c_str();
-    // std::cout << "\n!!!ENCRYPTEDKEY: " << *aes_encrypted_key << std::endl;
-    // std::string decrypted_key = rsa_decrypt(priv_key_file, *aes_encrypted_key);
-    // std::cout << "!!!DECRYPTEDKEY: " << decrypted_key << std::endl;
-    return encrypted_message;
-}
-
-std::string rsa_pgp_decrypt(char *aes_encrypted_key, const std::string encrypted_message, const std::string priv_key_file) {
-    // std::cout << "\n!!!ENCRYPTEDKEY: " << aes_encrypted_key << std::endl;
-    std::string decrypted_key = rsa_decrypt(priv_key_file, aes_encrypted_key);
-    // std::cout << "!!!DECRYPTEDKEY: " << decrypted_key << std::endl;
-    std::string decrypted_message = aes_default_decrypt(encrypted_message, decrypted_key);
-    return decrypted_message;
-}
