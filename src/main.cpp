@@ -133,8 +133,5 @@ int main(int argc, char *argv[]) {
             }
         }
     }
-
-    free(pub_file_mod);
-    free(priv_file_mod);
     return 0;
 }
