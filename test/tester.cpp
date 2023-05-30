@@ -25,21 +25,17 @@ void test_ecdh() {
 }
 
 void test_rsa() {
-    rsa_keygen();
+    rsa_keygen("private-keys/rsa_private_demo.pem", "public-keys/rsa_public_demo.pem");
     // Load keys from PEM files
-    RSA* privateKey = loadKeyFromPem("private-keys/rsa_private_demo.pem", true);
-    RSA* publicKey = loadKeyFromPem("public-keys/rsa_public_demo.pem", false);
-
+    const std::string pub_file = "public-keys/rsa_public_demo.pem";
+    const std::string priv_file = "private-keys/rsa_private_demo.pem";
     std::string plaintext = "Hello, RSA!";
-    std::string encrypted = rsa_encrypt(publicKey, plaintext);
-    std::string decrypted = rsa_decrypt(privateKey, encrypted);
+    std::string encrypted = rsa_encrypt(pub_file, plaintext);
+    std::string decrypted = rsa_decrypt(priv_file, encrypted);
 
     std::cout << "Plaintext: " << plaintext << std::endl;
     std::cout << "Encrypted: " << encrypted << std::endl;
     std::cout << "Decrypted: " << decrypted << std::endl;
-
-    RSA_free(privateKey);
-    RSA_free(publicKey);
 }
 
 void test_rsa_aes() {

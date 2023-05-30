@@ -4,6 +4,7 @@
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
 #include "rsa.h"
+#include "aes.h"
 
 void generatePrimes(BIGNUM* p, BIGNUM* q) {
     BIGNUM* tmp = BN_new();
@@ -44,7 +45,7 @@ RSA* loadKeyFromPem(const std::string& filename, bool isPrivate) {
     return rsa;
 }
 
-void rsa_keygen() {
+void rsa_keygen(const std::string priv_file, const std::string pub_file) {
     RSA* rsa = RSA_new();
     BIGNUM* p = BN_new();
     BIGNUM* q = BN_new();
@@ -56,15 +57,16 @@ void rsa_keygen() {
     RSA_generate_key_ex(rsa, 2048, q, NULL);
 
     // Save keys to PEM files
-    saveKeyToPem(rsa, "private-keys/rsa_private_demo.pem", true);
-    saveKeyToPem(rsa, "public-keys/rsa_public_demo.pem", false);
+    saveKeyToPem(rsa, priv_file, true);
+    saveKeyToPem(rsa, pub_file, false);
 
     RSA_free(rsa);
     BN_free(p);
     BN_free(q);
 }
 
-std::string rsa_encrypt(RSA* rsa, const std::string& plaintext) {
+std::string rsa_encrypt(const std::string public_file, const std::string& plaintext) {
+    RSA* rsa = loadKeyFromPem(public_file.c_str(), false);
     int rsaSize = RSA_size(rsa);
     std::string ciphertext;
     ciphertext.resize(rsaSize);
@@ -78,7 +80,8 @@ std::string rsa_encrypt(RSA* rsa, const std::string& plaintext) {
     return ciphertext;
 }
 
-std::string rsa_decrypt(RSA* rsa, const std::string& ciphertext) {
+std::string rsa_decrypt(const std::string private_file, const std::string& ciphertext) {
+    RSA* rsa = loadKeyFromPem(private_file, true);
     int rsaSize = RSA_size(rsa);
     std::string plaintext;
     plaintext.resize(rsaSize);
@@ -90,4 +93,17 @@ std::string rsa_decrypt(RSA* rsa, const std::string& ciphertext) {
         return "";
 
     return plaintext;
+}
+
+std::string rsa_pgp_encrypt(std::string *aes_encrypted_key, const std::string message, const std::string pub_key_file) {
+    std::string aes_key = generate_aes_key();
+    std::string encrypted_message = aes_default_encrypt(message, aes_key);
+    *aes_encrypted_key = rsa_encrypt(pub_key_file, aes_key);
+    return encrypted_message;
+}
+
+std::string rsa_pgp_decrypt(std::string aes_encrypted_key, const std::string encrypted_message, const std::string priv_key_file) {
+    std::string decrypted_key = rsa_decrypt(priv_key_file, aes_encrypted_key);
+    std::string decrypted_message = aes_default_decrypt(encrypted_message, decrypted_key);
+    return decrypted_message;
 }
