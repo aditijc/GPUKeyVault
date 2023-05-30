@@ -9,7 +9,6 @@ void test_ecdh() {
     const char *pub_file = "public-keys/ecdh_public_demo.pem";
     const char *priv_file = "private-keys/ecdh_private_demo.pem";
     const char *message = "hello world";
-
     std::cout << "Message: " << message << std::endl;
     generate_ecdh_key_pair(pub_file, priv_file);
     std::cout << "ECDH keys successfully generated" << std::endl;
@@ -26,13 +25,11 @@ void test_ecdh() {
 
 void test_rsa() {
     rsa_keygen("private-keys/rsa_private_demo.pem", "public-keys/rsa_public_demo.pem");
-    // Load keys from PEM files
     const std::string pub_file = "public-keys/rsa_public_demo.pem";
     const std::string priv_file = "private-keys/rsa_private_demo.pem";
     std::string plaintext = "Hello, RSA!";
     std::string encrypted = rsa_encrypt(pub_file, plaintext);
     std::string decrypted = rsa_decrypt(priv_file, encrypted);
-
     std::cout << "Plaintext: " << plaintext << std::endl;
     std::cout << "Encrypted: " << encrypted << std::endl;
     std::cout << "Decrypted: " << decrypted << std::endl;
@@ -57,15 +54,11 @@ void test_rsa_pgp() {
     const std::string priv_file = "private-keys/rsa_private.pem";
     std::string message = "Hello RSA-PGP!";
     std::cout << "Message: " << message << std::endl;
-    // char **aes_encrypted_key = (char **) malloc(sizeof(char *));
     rsa_keygen(priv_file, pub_file);
-
     std::string aes_key = generate_aes_key();
     std::string encrypted_message = aes_default_encrypt(message, aes_key);
     std::string aes_encrypted_key = rsa_encrypt(pub_file, aes_key);
-    
     std::cout << "Encrypted Message: " << encrypted_message << std::endl;
-
     std::string aes_decrypted_key = rsa_decrypt(priv_file, aes_encrypted_key);
     std::string decrypted_message = aes_default_decrypt(encrypted_message, aes_decrypted_key);
     std::cout << "Decrypted Message: " << decrypted_message.c_str() << std::endl;
