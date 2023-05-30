@@ -6,6 +6,7 @@
 #include <streambuf>
 #include <string.h>
 #include "ecdh.h"
+#include "rsa.h"
 #include "interface.h"
 
 int main(int argc, char *argv[]) {
@@ -64,8 +65,8 @@ int main(int argc, char *argv[]) {
 
     // If we are encrypting or decrypting, check that the next argument is a valid file. 
     const char *message;
-    char pub_file_mod[1000];
-    char priv_file_mod[1000];
+    char pub_file_mod[MAX_DIR_LEN];
+    char priv_file_mod[MAX_DIR_LEN];
     if (mode == ENCRYPT || mode == DECRYPT) {
         std::ifstream file(args.at(3));
         if (!file) {
@@ -112,11 +113,23 @@ int main(int argc, char *argv[]) {
                 generate_ecdh_key_pair(pub_file, priv_file);
             }
             else if (mode == ENCRYPT) {
-                char * encrypted = encrypt_ecdh(pub_file, priv_file, message);
+                char *encrypted = encrypt_ecdh(pub_file, priv_file, message);
                 std::cout << encrypted << std::endl;
             } 
             else {
-                decrypt_ecdh(pub_file, priv_file, message);
+                char *decrypted = decrypt_ecdh(pub_file, priv_file, message);
+                std::cout << decrypted << std::endl;
+            }
+        }
+        else if (args.front() == "rsa") {
+            if (mode == NEW) {
+                
+            }
+            else if (mode == ENCRYPT) {
+
+            } 
+            else {
+                
             }
         }
     }

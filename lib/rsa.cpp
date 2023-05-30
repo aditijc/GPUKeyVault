@@ -1,140 +1,112 @@
+#include <iostream>
+#include <fstream>
+#include <openssl/bn.h>
+#include <openssl/rsa.h>
+#include <openssl/pem.h>
 #include "rsa.h"
-#include<iostream>
-#include<math.h>
-#include<string.h>
-#include<stdlib.h>
- 
-using namespace std;
- 
-long int p, q, n, t, flag, e[100], d[100], temp[100], j, m[100], en[100], i;
-char msg[100];
-int prime(long int);
-void ce();
-long int cd(long int);
-void encrypt();
-void decrypt();
 
-int prime(long int pr)
-{
-    int i;
-    j = sqrt(pr);
-    for (i = 2; i <= j; i++)
-    {
-        if (pr % i == 0)
-            return 0;
-    }
-    return 1;
+void generatePrimes(BIGNUM* p, BIGNUM* q) {
+    BIGNUM* tmp = BN_new();
+    BN_generate_prime_ex(p, 1024, 0, NULL, NULL, NULL);
+    do {
+        BN_generate_prime_ex(q, 1024, 0, NULL, NULL, NULL);
+        BN_sub(tmp, p, q);
+    } while (BN_is_zero(tmp) || BN_is_negative(tmp));
+    BN_free(tmp);
 }
-int main()
-{
-    cout << "\nEnter the first prime number:\n";
-    cin >> p;
-    flag = prime(p);
-    if (flag == 0)
-    {
-        cout << "\nWRONG INPUT\n";
-        exit(1);
-    }
-    cout << "\nEnter the second prime number:\n";
-    cin >> q;
-    flag = prime(q);
-    if (flag == 0 || p == q)
-    {
-        cout << "\nWRONG INPUT\n";
-        exit(1);
-    }
-    cout << "\nEnter the message to encrypt:\n";
-    fflush(stdin);
-    cin >> msg;
-    for (i = 0; msg[i] != '\0'; i++)
-        m[i] = msg[i];
-    n = p * q;
-    t = (p - 1) * (q - 1);
-    ce();
-    cout << "\nThe public key and the private key are:\n";
-    for (i = 0; i < 1; i++)
-        cout << e[i] << "\t" << d[i] << "\n";
-    encrypt();
-    decrypt();
+
+bool saveKeyToPem(RSA* rsa, const std::string& filename, bool isPrivate) {
+    FILE* file = fopen(filename.c_str(), "wb");
+    if (!file)
+        return false;
+
+    if (isPrivate)
+        PEM_write_RSAPrivateKey(file, rsa, NULL, NULL, 0, NULL, NULL);
+    else
+        PEM_write_RSAPublicKey(file, rsa);
+
+    fclose(file);
+    return true;
+}
+
+RSA* loadKeyFromPem(const std::string& filename, bool isPrivate) {
+    RSA* rsa = NULL;
+    FILE* file = fopen(filename.c_str(), "rb");
+    if (!file)
+        return NULL;
+
+    if (isPrivate)
+        PEM_read_RSAPrivateKey(file, &rsa, NULL, NULL);
+    else
+        PEM_read_RSAPublicKey(file, &rsa, NULL, NULL);
+
+    fclose(file);
+    return rsa;
+}
+
+void rsa_keygen() {
+    RSA* rsa = RSA_new();
+    BIGNUM* p = BN_new();
+    BIGNUM* q = BN_new();
+
+    // Generate prime numbers
+    generatePrimes(p, q);
+
+    // Compute RSA keys
+    RSA_generate_key_ex(rsa, 2048, q, NULL);
+
+    // Save keys to PEM files
+    saveKeyToPem(rsa, "private-keys/rsa_private_demo.pem", true);
+    saveKeyToPem(rsa, "public-keys/rsa_public_demo.pem", false);
+
+    RSA_free(rsa);
+    BN_free(p);
+    BN_free(q);
+}
+
+std::string rsa_encrypt(RSA* rsa, const std::string& plaintext) {
+    int rsaSize = RSA_size(rsa);
+    std::string ciphertext;
+    ciphertext.resize(rsaSize);
+
+    int result = RSA_public_encrypt(plaintext.size(), reinterpret_cast<const unsigned char*>(plaintext.c_str()),
+                                    reinterpret_cast<unsigned char*>(&ciphertext[0]), rsa, RSA_PKCS1_PADDING);
+
+    if (result == -1)
+        return "";
+
+    return ciphertext;
+}
+
+std::string rsa_decrypt(RSA* rsa, const std::string& ciphertext) {
+    int rsaSize = RSA_size(rsa);
+    std::string plaintext;
+    plaintext.resize(rsaSize);
+
+    int result = RSA_private_decrypt(ciphertext.size(), reinterpret_cast<const unsigned char*>(ciphertext.c_str()),
+                                     reinterpret_cast<unsigned char*>(&plaintext[0]), rsa, RSA_PKCS1_PADDING);
+
+    if (result == -1)
+        return "";
+
+    return plaintext;
+}
+
+int main() {
+    rsa_keygen();
+    // Load keys from PEM files
+    RSA* privateKey = loadKeyFromPem("private-keys/rsa_private_demo.pem", true);
+    RSA* publicKey = loadKeyFromPem("public-keys/rsa_public_demo.pem", false);
+
+    std::string plaintext = "Hello, RSA!";
+    std::string encrypted = rsa_encrypt(publicKey, plaintext);
+    std::string decrypted = rsa_decrypt(privateKey, encrypted);
+
+    std::cout << "Plaintext: " << plaintext << std::endl;
+    std::cout << "Encrypted: " << encrypted << std::endl;
+    std::cout << "Decrypted: " << decrypted << std::endl;
+
+    RSA_free(privateKey);
+    RSA_free(publicKey);
     return 0;
-}
-void ce()
-{
-    int k;
-    k = 0;
-    for (i = 2; i < t; i++)
-    {
-        if (t % i == 0)
-            continue;
-        flag = prime(i);
-        if (flag == 1 && i != p && i != q)
-        {
-            e[k] = i;
-            flag = cd(e[k]);
-            if (flag > 0)
-            {
-                d[k] = flag;
-                k++;
-            }
-            if (k == 99)
-                break;
-        }
-    }
-}
-long int cd(long int x)
-{
-    long int k = 1;
-    while (1)
-    {
-        k = k + t;
-        if (k % x == 0)
-            return (k / x);
-    }
-}
-void encrypt()
-{
-    long int pt, ct, key = e[0], k, len;
-    i = 0;
-    len = strlen(msg);
-    while (i != len)
-    {
-        pt = m[i];
-        pt = pt - 96;
-        k = 1;
-        for (j = 0; j < key; j++)
-        {
-            k = k * pt;
-            k = k % n;
-        }
-        temp[i] = k;
-        ct = k + 96;
-        en[i] = ct;
-        i++;
-    }
-    en[i] = -1;
-    cout << "\nThe encrypted message is: \n";
-    for (i = 0; en[i] != -1; i++)
-        printf("%c", en[i]);
-}
-void decrypt()
-{
-    long int pt, ct, key = d[0], k;
-    i = 0;
-    while (en[i] != -1)
-    {
-        ct = temp[i];
-        k = 1;
-        for (j = 0; j < key; j++)
-        {
-            k = k * ct;
-            k = k % n;
-        }
-        pt = k + 96;
-        m[i] = pt;
-        i++;
-    }
-    m[i] = -1;
-    cout << "\nThe decrypted message is:\n";
-    for (i = 0; m[i] != -1; i++)
-        printf("%c", m[i]);
 }

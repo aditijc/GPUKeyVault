@@ -5,6 +5,7 @@
 const std::vector<std::string> algs = {"ecdh"};
 const std::string PUB_DIR = "public-keys/";
 const std::string PRIV_DIR = "private-keys/";
+const int MAX_DIR_LEN = 1000;
 
 enum operations {
     ENCRYPT = 0,
