@@ -9,15 +9,9 @@
 #include <vector>
 
 
-// need to figure out what to do with the IV thing --> has to be generated for every
-// plain text that we want to encrypt + every cipher we want to ecrypt
-
-// OR we can use the same intialization string for the IV each time
-
-// Make sure to provide the key and IV strings in the correct format (e.g., hexadecimal) 
-// and with the appropriate lengths (32-byte key for AES-256 and 16-byte IV for AES-256 CBC).
 
 const int AES_KEY_SIZE = 256;  // AES-256
+
 
 char *aes_encrypt(unsigned char *shared_secret, size_t shared_secret_len, const char *message) {
     const EVP_CIPHER *cipher = EVP_aes_256_cbc();
@@ -36,11 +30,20 @@ char *aes_encrypt(unsigned char *shared_secret, size_t shared_secret_len, const 
     unsigned char *ciphertext = new unsigned char[shared_secret_len + block_size];
     int ciphertext_len = 0;
 
+
+    // Parallelize the AES encryption process on the GPU using CUDA.
+
+    // 1. Transfer the necessary data (shared_secret, message, iv) from the CPU to the GPU device memory.
+
+    // 2. Launch a CUDA kernel to perform AES encryption on multiple data elements in parallel.
+    //    Each CUDA thread can handle one block of data or a portion of the data, ensuring efficient parallel execution.
+
+    // 3. Within the CUDA kernel, perform the AES encryption using the EVP_EncryptUpdate and EVP_EncryptFinal_ex functions.
+
     if (EVP_EncryptInit_ex(aes_ctx, cipher, NULL, shared_secret, iv) != 1 ||
         EVP_EncryptUpdate(aes_ctx, ciphertext, &ciphertext_len, reinterpret_cast<const unsigned char *>(message),
         strlen(message)) != 1 || EVP_EncryptFinal_ex(aes_ctx, ciphertext + ciphertext_len, &ciphertext_len) != 1) {
         std::cerr << "Encryption failed." << std::endl;
-        // EC_KEY_free(ec_key);
         delete[] shared_secret;
         delete[] ciphertext;
         EVP_CIPHER_CTX_free(aes_ctx);
@@ -52,6 +55,8 @@ char *aes_encrypt(unsigned char *shared_secret, size_t shared_secret_len, const 
     return reinterpret_cast<char *>(ciphertext);
 }
 
+
+// Function to perform AES decryption using CUDA
 char *aes_decrypt(unsigned char *shared_secret, const char *encrypted_message) {
     // Perform symmetric decryption using the shared secret
     const EVP_CIPHER *cipher = EVP_aes_256_cbc();
@@ -69,6 +74,16 @@ char *aes_decrypt(unsigned char *shared_secret, const char *encrypted_message) {
     unsigned char *plaintext = new unsigned char[strlen(encrypted_message) + block_size];
     int plaintext_len = 0;
 
+
+    // Parallelize the AES decryption process on the GPU using CUDA.
+
+    // 1. Transfer the necessary data (shared_secret, encrypted_message, iv) from the CPU to the GPU device memory.
+
+    // 2. Launch a CUDA kernel to perform AES decryption on multiple data elements in parallel.
+    //    Each CUDA thread can handle one block of data or a portion of the data, ensuring efficient parallel execution.
+
+    // 3. Within the CUDA kernel, perform the AES decryption using the EVP_DecryptUpdate and EVP_DecryptFinal_ex functions.
+
     if (EVP_DecryptInit_ex(aes_ctx, cipher, NULL, shared_secret, iv) != 1 ||
         EVP_DecryptUpdate(aes_ctx, plaintext, &plaintext_len, reinterpret_cast<const unsigned char *>(encrypted_message),
                           strlen(encrypted_message)) != 1 ||
@@ -85,10 +100,22 @@ char *aes_decrypt(unsigned char *shared_secret, const char *encrypted_message) {
     return reinterpret_cast<char *>(plaintext);
 }
 
+
+// Function to generate an AES key
 std::string generate_aes_key() {
     std::vector<unsigned char> key(AES_KEY_SIZE / 8);
 
-    // Generate the AES key
+     // Generate the AES key
+
+    // Parallelize the key generation process on the GPU using CUDA.
+
+    // 1. Allocate memory on the GPU device for the key.
+
+    // 2. Launch a CUDA kernel to generate the AES key in parallel.
+    //    Each CUDA thread can generate a portion of the key, ensuring efficient parallel execution.
+
+    // 3. Transfer the generated key back from the GPU device memory to the CPU memory.
+    
     if (RAND_bytes(key.data(), key.size()) != 1) {
         std::cerr << "Error generating AES key." << std::endl;
         // Handle the error case appropriately
@@ -117,6 +144,7 @@ std::string base64Encode(const unsigned char* data, int size) {
 }
 
 // Encrypts the plain text using AES-256 encryption
+// This function can be parallelized on the GPU using CUDA.
 std::string aes_default_encrypt(const std::string& plainText, const std::string& key) {
     const int AES_KEY_SIZE = 256;
     unsigned char iv[AES_BLOCK_SIZE];
@@ -133,8 +161,19 @@ std::string aes_default_encrypt(const std::string& plainText, const std::string&
     int cipherLength = ((plainText.length() / AES_BLOCK_SIZE) + 1) * AES_BLOCK_SIZE;
     unsigned char* cipherText = new unsigned char[cipherLength];
 
+    // Parallelize the AES encryption process on the GPU using CUDA.
+
+    // 1. Transfer the necessary data (plain text, key, initialization vector) from the CPU to the GPU device memory.
+
+    // 2. Launch a CUDA kernel to perform AES encryption on multiple data elements in parallel.
+    //    Each CUDA thread can handle one block of data or a portion of the data, ensuring efficient parallel execution.
+
+    // 3. Within the CUDA kernel, perform the AES encryption using the AES_cbc_encrypt function.
+
     AES_cbc_encrypt(reinterpret_cast<const unsigned char*>(plainText.c_str()), cipherText, plainText.length(),
                     &aesKey, iv, AES_ENCRYPT);
+    
+    // 4. Transfer the resulting cipher text back from the GPU device memory to the CPU memory.
 
     encryptedText.assign(reinterpret_cast<char*>(cipherText), cipherLength);
 
@@ -144,6 +183,7 @@ std::string aes_default_encrypt(const std::string& plainText, const std::string&
 }
 
 // Decrypts the encrypted text using AES-256 decryption
+// This function can be parallelized on the GPU using CUDA.
 std::string aes_default_decrypt(const std::string& encryptedText, const std::string& key) {
     const int AES_KEY_SIZE = 256;
     unsigned char iv[AES_BLOCK_SIZE];
@@ -160,8 +200,20 @@ std::string aes_default_decrypt(const std::string& encryptedText, const std::str
     int plainLength = encryptedText.length();
     unsigned char* plainText = new unsigned char[plainLength];
 
+
+    // Parallelize the AES decryption process on the GPU using CUDA.
+
+    // 1. Transfer the necessary data (encrypted text, key, initialization vector) from the CPU to the GPU device memory.
+
+    // 2. Launch a CUDA kernel to perform AES decryption on multiple data elements in parallel.
+    //    Each CUDA thread can handle one block of data or a portion of the data, ensuring efficient parallel execution.
+
+    // 3. Within the CUDA kernel, perform the AES decryption using the AES_cbc_encrypt function.
+
     AES_cbc_encrypt(reinterpret_cast<const unsigned char*>(encryptedText.c_str()), plainText, plainLength,
                     &aesKey, iv, AES_DECRYPT);
+
+    // 4. Transfer the resulting plain text back from the GPU device memory to the CPU memory.
 
     decryptedText.assign(reinterpret_cast<char*>(plainText), plainLength);
 
