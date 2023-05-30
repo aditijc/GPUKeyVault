@@ -115,7 +115,6 @@ std::string generate_aes_key() {
     //    Each CUDA thread can generate a portion of the key, ensuring efficient parallel execution.
 
     // 3. Transfer the generated key back from the GPU device memory to the CPU memory.
-    
     if (RAND_bytes(key.data(), key.size()) != 1) {
         std::cerr << "Error generating AES key." << std::endl;
         // Handle the error case appropriately
@@ -137,6 +136,17 @@ std::string base64Encode(const unsigned char* data, int size) {
     BIO_get_mem_ptr(b64, &mem);
 
     std::string encodedString(mem->data, mem->length);
+    
+    // Transfer input data (data) from CPU memory to GPU device memory.
+
+    // Launch a CUDA kernel on the GPU to perform base64 encoding. 
+    // Each CUDA thread can handle one or multiple elements of the data array, allowing for efficient parallel execution.
+
+    // Within the CUDA kernel, perform the base64 encoding operation on the input data.
+    // Each CUDA thread can process its assigned elements independently.
+
+    // Once the parallel encoding is completed on the GPU, transfer the encoded data 
+    // from the GPU device memory back to the CPU memory.
 
     BIO_free_all(b64);
 

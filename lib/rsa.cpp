@@ -71,6 +71,14 @@ std::string rsa_encrypt(const std::string public_file, const std::string& plaint
     std::string ciphertext;
     ciphertext.resize(rsaSize);
 
+    //  Offload encryption operation to GPU
+    // 1. Transfer plaintext to GPU memory
+
+    // 2. Parallelize encryption operation on GPU
+    //    using CUDA or other GPU libraries
+
+    // 3. Transfer ciphertext from GPU memory back to CPU
+
     int result = RSA_public_encrypt(plaintext.size(), reinterpret_cast<const unsigned char*>(plaintext.c_str()),
                                     reinterpret_cast<unsigned char*>(&ciphertext[0]), rsa, RSA_PKCS1_PADDING);
 
@@ -85,6 +93,14 @@ std::string rsa_decrypt(const std::string private_file, const std::string& ciphe
     int rsaSize = RSA_size(rsa);
     std::string plaintext;
     plaintext.resize(rsaSize);
+
+    // Offload decryption operation to GPU
+    // 1. Transfer ciphertext to GPU memory
+
+    // 2. Parallelize decryption operation on GPU
+    //    using CUDA or other GPU libraries
+
+    // 3. Transfer plaintext from GPU memory back to CPU
 
     int result = RSA_private_decrypt(ciphertext.size(), reinterpret_cast<const unsigned char*>(ciphertext.c_str()),
                                      reinterpret_cast<unsigned char*>(&plaintext[0]), rsa, RSA_PKCS1_PADDING);

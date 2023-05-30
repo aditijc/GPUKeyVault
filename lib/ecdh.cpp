@@ -111,12 +111,28 @@ unsigned char *get_shared_secret(const char *priv_file, const char *pub_file) {
 }
 
 char *encrypt_ecdh(const char *pub_file, const char *priv_file, const char *message) {
+    //  Offload shared secret calculation to GPU
+    // 1. Transfer private and public keys to GPU memory
+
+    // 2. Parallelize shared secret calculation on GPU
+    //    using CUDA or other GPU libraries
+
+    // 3. Transfer shared secret from GPU memory back to CPU
     unsigned char *shared_secret = get_shared_secret(priv_file, pub_file);
     size_t shared_secret_len = sizeof(shared_secret);
     return aes_encrypt(shared_secret, shared_secret_len, message);
 }
 
 char *decrypt_ecdh(const char *pub_file, const char *priv_file, const char *encrypted_message) {
+    // Offload shared secret calculation to GPU
+    // 1. Transfer private and public keys to GPU memory
+
+    // 2. Parallelize shared secret calculation on GPU
+    //    using CUDA or other GPU libraries
+
+    // 3. Transfer shared secret from GPU memory back to CPU
+
+
     unsigned char* shared_secret = get_shared_secret(priv_file, pub_file);
     return aes_decrypt(shared_secret, encrypted_message);    
 }
