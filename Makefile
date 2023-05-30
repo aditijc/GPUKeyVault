@@ -1,5 +1,6 @@
 CXX := g++
-CFLAGS := -lssl -lcrypto -Wno-deprecated-declarations
+CXXLIBS := lib/interface.cpp lib/ecdh.cpp lib/aes.cpp lib/rsa.cpp 
+CFLAGS := -lssl -lcrypto -Wno-deprecated-declarations -Wno-free-nonheap-object
 BUILDDIR := bin
 PUBLICDIR := public-keys
 PRIVATEDIR := private-keys
@@ -18,14 +19,11 @@ install:
 	apt-get install openssl
 	apt-get install libssl-dev
 
-# all: $(BUILDDIR)
-# 	$(CXX) lib/aes.cpp lib/ecdh.cpp -o $(BUILDDIR)/ecdh $(CFLAGS) $(LIB) $(INC)
-
 build: $(BUILDDIR)
-	$(CXX) lib/interface.cpp lib/ecdh.cpp lib/aes.cpp src/main.cpp -o $(BUILDDIR)/main $(CFLAGS) $(LIB) $(INC);
+	$(CXX) $(CXXLIBS) src/main.cpp -o $(BUILDDIR)/main $(CFLAGS) $(LIB) $(INC);
 
 test: $(BUILDDIR)
-	$(CXX) lib/interface.cpp lib/ecdh.cpp lib/aes.cpp test/tester.cpp -o $(BUILDDIR)/tester $(CFLAGS) $(LIB) $(INC);
+	$(CXX) $(CXXLIBS) test/tester.cpp -o $(BUILDDIR)/tester $(CFLAGS) $(LIB) $(INC);
 	$(BUILDDIR)/tester
 
 clean: 

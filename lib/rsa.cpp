@@ -91,22 +91,3 @@ std::string rsa_decrypt(RSA* rsa, const std::string& ciphertext) {
 
     return plaintext;
 }
-
-int main() {
-    rsa_keygen();
-    // Load keys from PEM files
-    RSA* privateKey = loadKeyFromPem("private-keys/rsa_private_demo.pem", true);
-    RSA* publicKey = loadKeyFromPem("public-keys/rsa_public_demo.pem", false);
-
-    std::string plaintext = "Hello, RSA!";
-    std::string encrypted = rsa_encrypt(publicKey, plaintext);
-    std::string decrypted = rsa_decrypt(privateKey, encrypted);
-
-    std::cout << "Plaintext: " << plaintext << std::endl;
-    std::cout << "Encrypted: " << encrypted << std::endl;
-    std::cout << "Decrypted: " << decrypted << std::endl;
-
-    RSA_free(privateKey);
-    RSA_free(publicKey);
-    return 0;
-}
