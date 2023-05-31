@@ -33,6 +33,7 @@ void test_rsa() {
     std::cout << "Plaintext: " << plaintext << std::endl;
     std::cout << "Encrypted: " << encrypted << std::endl;
     std::cout << "Decrypted: " << decrypted << std::endl;
+    assert(plaintext.compare(decrypted.c_str()) == 0);
 }
 
 void test_rsa_aes() {
@@ -47,6 +48,7 @@ void test_rsa_aes() {
     std::string decryptedText = aes_default_decrypt(encryptedText, key);
 
     std::cout << "Decrypted Text: " << decryptedText << std::endl;
+    assert(plainText.compare(decryptedText.c_str()) == 0);
 }
 
 void test_rsa_pgp() {
@@ -62,6 +64,7 @@ void test_rsa_pgp() {
     std::string aes_decrypted_key = rsa_decrypt(priv_file, aes_encrypted_key);
     std::string decrypted_message = aes_default_decrypt(encrypted_message, aes_decrypted_key);
     std::cout << "Decrypted Message: " << decrypted_message.c_str() << std::endl;
+    assert(message.compare(decrypted_message.c_str()) == 0);
 }
 
 int main() {
