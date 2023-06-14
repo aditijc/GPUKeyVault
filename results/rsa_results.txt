@@ -1,0 +1,6 @@
+CPU keygen: 432281 ms
+GPU keygen: 0 ms
+CPU encryption: 768 ms
+GPU encryption: 0 ms
+CPU decryption: 3820 ms
+GPU decryption: 0 ms
