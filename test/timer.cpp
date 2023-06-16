@@ -1,15 +1,17 @@
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <chrono>
 #include <vector>
 #include <cmath>
 #include <numeric>
-#include "ecdh.h"
-#include "aes.h"
 #include "rsa.h"
+#include "cursa.h"
 
 using namespace std::chrono;
 
 const int N = 100;
+const char *FILE_PATH = "sample/novel.txt";
 
 float compute_mean(std::vector<int64_t> v) {
     return std::reduce(v.begin(), v.end()) / N;
@@ -19,7 +21,6 @@ void time_rsa() {
     std::cout << "Performing RSA CPU key generation." << std::endl;
 
     std::vector<int64_t> cpu_keygen_times;
-    std::vector<int64_t> gpu_keygen_times;
     for (int i = 0; i < N; i++) {
         auto start = high_resolution_clock::now();
         rsa_keygen(
@@ -31,23 +32,16 @@ void time_rsa() {
         cpu_keygen_times.push_back(dt);
     }
 
-    // for (int i = 0; i < N; i++) {
-    //     auto start = high_resolution_clock::now();
-    //     // GPU code
-    //     auto stop = high_resolution_clock::now();
-    //     auto duration = duration_cast<microseconds>(stop - start);
-    //     int64_t dt = duration.count();
-    //     std::cout << dt << std::endl;
-    //     gpu_keygen_times.push_back(dt);
-    // }
-
     std::vector<int64_t> cpu_en_times;
     std::vector<int64_t> cpu_de_times;
-    std::vector<int64_t> gpu_en_times;
-    std::vector<int64_t> gpu_de_times;
     const std::string pub_file = "public-keys/rsa_public_demo.pem";
     const std::string priv_file = "private-keys/rsa_private_demo.pem";
-    const std::string plaintext = "the quick brown fox jumps over the lazy dog";
+
+    std::ifstream t(FILE_PATH);
+    std::stringstream buffer;
+    buffer << t.rdbuf();
+    
+    const std::string plaintext = buffer.str();
 
     std::cout << "Performing RSA encryption and decryption." << std::endl;
 
@@ -65,39 +59,39 @@ void time_rsa() {
         cpu_de_times.push_back(duration.count());
     }
 
-    // for (int i = 0; i < N; i++) {
-    //     auto start = high_resolution_clock::now();
-    //     std::string encrypted = ""; // GPU CODE
-    //     auto stop = high_resolution_clock::now();
-    //     auto duration = duration_cast<microseconds>(stop - start);
-    //     gpu_en_times.push_back(duration.count());
-
-    //     start = high_resolution_clock::now();
-    //     std::string decrypted = ""; // GPU CODE
-    //     stop = high_resolution_clock::now();
-    //     duration = duration_cast<microseconds>(stop - start);
-    //     gpu_de_times.push_back(duration.count());
-    // }
-
     std::ofstream cpu_csvfile("results/rsa_cpu.csv");
     cpu_csvfile << "CPU keygen,CPU encryption,CPU decryption" << endl;
     for (int i = 0; i < N; i++) {
         cpu_csvfile << cpu_keygen_times[i] << "," << cpu_en_times[i] << "," << cpu_de_times[i] << endl;
     }
 
+    std::cout << "Performing RSA on GPU." << std::endl;
+    std::vector<int64_t> gpu_times;
+    for (int i = 0; i < N; i++) {
+        std::string file_path = FILE_PATH;
+        auto start = high_resolution_clock::now();
+        set_rsa_parameters(file_path);
+        auto stop = high_resolution_clock::now();
+        auto duration = duration_cast<microseconds>(stop - start);
+        gpu_times.push_back(duration.count());
+    }
+
     std::ofstream gpu_csvfile("results/rsa_gpu.csv");
-    gpu_csvfile << "GPU keygen,GPU encryption,GPU decryption" << endl;
-    // for (int i = 0; i < N; i++) {
-    //     gpu_csvfile << gpu_keygen_times[i] << "," << gpu_en_times[i] << "," << gpu_de_times[i] << endl;
-    // }
+    gpu_csvfile << "GPU keygen + GPU encryption + GPU decryption" << endl;
+    for (int i = 0; i < N; i++) {
+        gpu_csvfile << gpu_times[i] << endl;
+    }
 
     std::ofstream rsa_res("results/rsa_results.txt");
-    rsa_res << "CPU keygen: " << compute_mean(cpu_keygen_times) << " µs" << endl;
-    rsa_res << "GPU keygen: " << compute_mean(gpu_keygen_times) << " µs" << endl;
-    rsa_res << "CPU encryption: " << compute_mean(cpu_en_times) << " µs" << endl;
-    rsa_res << "GPU encryption: " << compute_mean(gpu_en_times) << " µs" << endl;
-    rsa_res << "CPU decryption: " << compute_mean(cpu_de_times) << " µs" << endl;
-    rsa_res << "GPU decryption: " << compute_mean(gpu_de_times) << " µs" << endl;
+    float ck_mean = compute_mean(cpu_keygen_times);
+    float ce_mean = compute_mean(cpu_en_times);
+    float cd_mean = compute_mean(cpu_de_times);
+    float gpu_mean = compute_mean(gpu_times);
+    rsa_res << "CPU keygen: " << ck_mean << " µs" << endl;
+    rsa_res << "CPU encryption: " << ce_mean << " µs" << endl;
+    rsa_res << "CPU decryption: " << cd_mean << " µs" << endl;
+    rsa_res << "CPU total: " << ck_mean + ce_mean + cd_mean << " µs" << endl;
+    rsa_res << "GPU total: " << gpu_mean << " µs" << endl;
 
 }
 
