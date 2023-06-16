@@ -8,3 +8,6 @@ a.out
 # Ignore generated public and private keys 
 public-keys
 private-keys
+# Ignore encrypted and decrypted text
+encrypted 
+decrypted

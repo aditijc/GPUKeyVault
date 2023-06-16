@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <iostream>
+#include <fstream>
 #include <string.h>
 #include <math.h>
 #include "RSA.h"
@@ -30,47 +32,76 @@ void rsa(int* num, int* key, int* den, int* result)
 }
 
 
-#define BS 100
+// #define BS 100
+
+// int p, q, n, t, numChars, tpb = 1024;
+// int bpg;
+// int e[BS], d[BS], temp[BS], j, m[BS],
+//     en[BS], mm[BS], res[BS], i;
+
+// float time_enc_gpu, time_dec_gpu = 0.0;
+
+// char msg[BS];
 
 int p, q, n, t, numChars, tpb = 1024;
 int bpg;
-int e[BS], d[BS], temp[BS], j, m[BS],
-    en[BS], mm[BS], res[BS], i;
+int* e, *d, *temp, j, *m, *en, *mm, *res, i;
 
 float time_enc_gpu, time_dec_gpu = 0.0;
 
-char msg[BS];
+char* msg;
+
+int getFileSize(const std::string& filename) {
+    std::ifstream file(filename, std::ifstream::ate | std::ifstream::binary);
+    if (!file.is_open()) {
+        return -1; // Return -1 if there was an error opening the file
+    }
+
+    return static_cast<int>(file.tellg());
+}
 
 
-
-int main() {
+int main(int argc, char* argv[]) {
     p = 157;
     q = 373;
 
-    srand((unsigned) time(NULL));
-
-    FILE *fp = fopen("input.txt", "wb");
-    if (fp != NULL) {
-        for (int k = 0; k < BS; k++) {
-            int r = rand() % 26;
-            fprintf(fp, "%c", r + 97);
-        }
-        fprintf(fp, "\n");
-        fclose(fp);
-    }
-
-    FILE *f = fopen("input.txt", "r");
-    if (f == NULL) {
-        perror("Error opening file");
+    std::string filePath = argv[1];
+    int fileSize = getFileSize(filePath);
+    if (fileSize == -1) {
+        std::cout << "Error opening the file." << std::endl;
         return 1;
     }
 
-    if (fgets(msg, BS, f) != NULL) {
-        printf("Reading input file...");
+    int BS = fileSize;
+
+    e = new int[BS];
+    d = new int[BS];
+    temp = new int[BS];
+    j = 0;
+    m = new int[BS];
+    en = new int[BS];
+    mm = new int[BS];
+    res = new int[BS];
+    i = 0;
+
+    msg = new char[BS];
+
+    srand((unsigned) time(NULL));
+
+    msg = new char[BS + 1]; // Allocate space for BS characters plus the null terminator
+
+    std::ifstream inputFile(filePath);
+    if (!inputFile.is_open()) {
+        std::cout << "Error opening the file." << std::endl;
+        delete[] msg; // Clean up dynamically allocated memory
+        return 1;
     }
-    fclose(f);
+
+    inputFile.read(msg, BS); // Read BS characters from the file
+
     numChars = strlen(msg) - 1;
-    msg[numChars] = '\0';
+    msg[numChars] = '\0'; // Add null terminator to end of string
+    inputFile.close();
 
     bpg = (numChars + tpb - 1) / tpb;
 

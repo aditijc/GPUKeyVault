@@ -1,6 +1,6 @@
-CXX := g++
-CXXLIBS := lib/interface.cpp lib/ecdh.cpp lib/aes.cpp lib/rsa.cpp 
-CXXFLAGS := -lssl -lcrypto -Wno-deprecated-declarations -Wno-free-nonheap-object
+CXX := nvcc
+CXXLIBS := lib/interface.cpp lib/ecdh.cpp lib/aes.cpp lib/rsa.cpp lib/cursa.cu
+CXXFLAGS := -lssl -lcrypto -Wno-deprecated-declarations -arch=sm_52
 BUILDDIR := bin
 RESULTSDIR := results
 PUBLICDIR := public-keys

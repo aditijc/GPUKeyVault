@@ -7,6 +7,7 @@
 #include <string.h>
 #include "ecdh.h"
 #include "rsa.h"
+#include "cursa.h"
 #include "interface.h"
 
 int main(int argc, char *argv[]) {
@@ -43,8 +44,6 @@ int main(int argc, char *argv[]) {
     bool CPU = true;
     if (args.at(1) == "-g") {
         CPU = false;
-        std::cout << "Not implemented" << std::endl;
-        return 1;
     }
     else if (args.at(1) != "-c") {
         std::cout << "Second argument must indicate CPU or GPU usage [-c|-g]." << std::endl;
@@ -63,51 +62,51 @@ int main(int argc, char *argv[]) {
         mode = NEW;
     }
 
-    // If we are encrypting or decrypting, check that the next argument is a valid file. 
-    const char *message;
-    char pub_file_mod[MAX_DIR_LEN];
-    char priv_file_mod[MAX_DIR_LEN];
-    if (mode == ENCRYPT || mode == DECRYPT) {
-        std::ifstream file(args.at(3));
-        if (!file) {
-            std::cout << "Fourth argument must be valid file path when encrypting and decrypting." << std::endl;
-            return 1;
-        }
-        std::string str((std::istreambuf_iterator<char>(file)),
-                        std::istreambuf_iterator<char>());
-        message = str.c_str();
-        strcpy(pub_file_mod, PUB_DIR.c_str());
-        strcat(pub_file_mod, args.at(4).c_str());
-
-        strcpy(priv_file_mod, PRIV_DIR.c_str());
-        strcat(priv_file_mod, args.at(5).c_str());
-
-        std::ifstream file1(pub_file_mod);
-        if (!file1) {
-            std::cout << "Fifth argument must be valid file path when encrypting and decrypting." << std::endl;
-            return 1;
-        }
-
-        std::ifstream file2(pub_file_mod);
-        if (!file2) {
-            std::cout << "Sixth argument must be valid file path when encrypting and decrypting." << std::endl;
-            return 1;
-        }
-
-
-    } else {
-        // We are creating a new public private key pair, so we do not need to specify a message file.
-        strcpy(pub_file_mod, PUB_DIR.c_str());
-        strcat(pub_file_mod, args.at(3).c_str());
-
-        strcpy(priv_file_mod, PRIV_DIR.c_str());
-        strcat(priv_file_mod, args.at(4).c_str());
-    }
-
-    // Call functions based on pspecified parameters
-    const char *pub_file = pub_file_mod;
-    const char *priv_file = priv_file_mod;
     if (CPU == true) {
+        // If we are encrypting or decrypting, check that the next argument is a valid file. 
+        const char *message;
+        char pub_file_mod[MAX_DIR_LEN];
+        char priv_file_mod[MAX_DIR_LEN];
+        if (mode == ENCRYPT || mode == DECRYPT) {
+            std::ifstream file(args.at(3));
+            if (!file) {
+                std::cout << "Fourth argument must be valid file path when encrypting and decrypting." << std::endl;
+                return 1;
+            }
+            std::string str((std::istreambuf_iterator<char>(file)),
+                            std::istreambuf_iterator<char>());
+            message = str.c_str();
+            strcpy(pub_file_mod, PUB_DIR.c_str());
+            strcat(pub_file_mod, args.at(4).c_str());
+
+            strcpy(priv_file_mod, PRIV_DIR.c_str());
+            strcat(priv_file_mod, args.at(5).c_str());
+
+            std::ifstream file1(pub_file_mod);
+            if (!file1) {
+                std::cout << "Fifth argument must be valid file path when encrypting and decrypting." << std::endl;
+                return 1;
+            }
+
+            std::ifstream file2(pub_file_mod);
+            if (!file2) {
+                std::cout << "Sixth argument must be valid file path when encrypting and decrypting." << std::endl;
+                return 1;
+            }
+
+
+        } else {
+            // We are creating a new public private key pair, so we do not need to specify a message file.
+            strcpy(pub_file_mod, PUB_DIR.c_str());
+            strcat(pub_file_mod, args.at(3).c_str());
+
+            strcpy(priv_file_mod, PRIV_DIR.c_str());
+            strcat(priv_file_mod, args.at(4).c_str());
+        }
+
+        // Call functions based on pspecified parameters
+        const char *pub_file = pub_file_mod;
+        const char *priv_file = priv_file_mod;
         if (args.front() == "ecdh") {
             if (mode == NEW) {
                 generate_ecdh_key_pair(pub_file, priv_file);
@@ -132,6 +131,24 @@ int main(int argc, char *argv[]) {
                 
             }
         }
+    } 
+    // GPU Code
+    else { 
+        if (args.front() == "rsa") {
+            std::string file_path = args.at(3);
+            set_rsa_parameters(file_path);
+            if (mode == ENCRYPT) {
+                enc_gpu(file_path);
+            }
+            else if (mode == DECRYPT) {
+                dec_gpu(file_path);
+            } else {
+                std::cout << "Invalid usage: Key generation for CPU." << std::endl;
+                return 1;
+            }
+
+        }
     }
+
     return 0;
 }

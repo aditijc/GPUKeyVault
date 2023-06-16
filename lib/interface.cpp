@@ -9,7 +9,8 @@ void display_encryption_modes() {
 
 void display_help() {
     std::cout << "GPUKeyGen provides encryption and decryption algorithms and public/private key generation and storage." << std::endl;
-    std::cout << "USAGE: [encryption mode] [-c|-g] [-e FILE|-d FILE|-n] [PUB-KEY] [PRIV-KEY]" << std::endl << std::endl;
+    std::cout << "USAGE: [encryption mode] [-c|-g] [-e FILE|-d FILE|-n*] [PUB-KEY*] [PRIV-KEY*]" << std::endl << std::endl;
+    std::cout << "  (*) only available for CPU." << std::endl << std::endl;
     std::cout << "ENCRYPTION MODES: ";
     display_encryption_modes();
     std::cout << std::endl;
