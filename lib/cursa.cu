@@ -99,8 +99,8 @@ int set_rsa_parameters(std::string filePath) {
     t = (p - 1) * (q - 1);
     fc();
 
-    // enc_gpu();
-    // dec_gpu();
+    enc_gpu();
+    dec_gpu();
     return 0;
 }
 
@@ -132,7 +132,7 @@ void fc() {
         }
     }
 }
-void enc_gpu(std::string file) {
+void enc_gpu() {
     // Allocate and copy memory on the GPU
     cudaSetDevice(1);
     
@@ -185,7 +185,7 @@ void enc_gpu(std::string file) {
     }
 }
 
-void dec_gpu(std::string file) {
+void dec_gpu() {
     // Allocate and copy memory on the GPU
     cudaSetDevice(1);
     

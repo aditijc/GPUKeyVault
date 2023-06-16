@@ -49,20 +49,20 @@ int main(int argc, char *argv[]) {
         std::cout << "Second argument must indicate CPU or GPU usage [-c|-g]." << std::endl;
         return 1;
     }
-
-    // Check that third argument is valid 
-    if (args.at(2) != "-e" && args.at(2) != "-d" && args.at(2) != "-n") {
-        std::cout << "Third argument must indicate encrypting, decrypting, or generating new keys [-e|-d|-n]."  << std::endl;
-    }
-
-    int mode = ENCRYPT;
-    if (args.at(2) == "-d") {
-        mode = DECRYPT;
-    } else if (args.at(2) == "-n") {
-        mode = NEW;
-    }
-
+    
     if (CPU == true) {
+        // Check that third argument is valid 
+        if (args.at(2) != "-e" && args.at(2) != "-d" && args.at(2) != "-n") {
+            std::cout << "Third argument must indicate encrypting, decrypting, or generating new keys [-e|-d|-n]."  << std::endl;
+        }
+
+        int mode = ENCRYPT;
+        if (args.at(2) == "-d") {
+            mode = DECRYPT;
+        } else if (args.at(2) == "-n") {
+            mode = NEW;
+        }
+
         // If we are encrypting or decrypting, check that the next argument is a valid file. 
         const char *message;
         char pub_file_mod[MAX_DIR_LEN];
@@ -135,18 +135,8 @@ int main(int argc, char *argv[]) {
     // GPU Code
     else { 
         if (args.front() == "rsa") {
-            std::string file_path = args.at(3);
+            std::string file_path = args.at(2);
             set_rsa_parameters(file_path);
-            if (mode == ENCRYPT) {
-                enc_gpu(file_path);
-            }
-            else if (mode == DECRYPT) {
-                dec_gpu(file_path);
-            } else {
-                std::cout << "Invalid usage: Key generation for CPU." << std::endl;
-                return 1;
-            }
-
         }
     }
 

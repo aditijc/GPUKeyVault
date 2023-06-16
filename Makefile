@@ -8,6 +8,8 @@ PRIVATEDIR := private-keys
 LIB := -L lib
 INC := -I include
 
+.DEFAULT_GOAL := build
+
 keys: 
 	mkdir -p $(PUBLICDIR)
 	mkdir -p $(PRIVATEDIR)
