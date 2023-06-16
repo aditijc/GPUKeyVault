@@ -13,6 +13,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: install nvcc
+      run: apt-get install nvidia-cuda-toolkit
+
     - name: make test
       run: make test
 
