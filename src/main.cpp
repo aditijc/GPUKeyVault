@@ -8,6 +8,7 @@
 #include "ecdh.h"
 #include "rsa.h"
 #include "cursa.h"
+#include "cuaes.h"
 #include "interface.h"
 
 int main(int argc, char *argv[]) {
@@ -53,7 +54,7 @@ int main(int argc, char *argv[]) {
     if (CPU == true) {
         // Check that third argument is valid 
         if (args.at(2) != "-e" && args.at(2) != "-d" && args.at(2) != "-n") {
-            std::cout << "Third argument must indicate encrypting, decrypting, or generating new keys [-e|-d|-n]."  << std::endl;
+            std::cout << "Third argument must indicate encrypting, decrypting, or generating new keys [-e|-d|-n]." << std::endl;
         }
 
         int mode = ENCRYPT;
@@ -113,22 +114,36 @@ int main(int argc, char *argv[]) {
             }
             else if (mode == ENCRYPT) {
                 char *encrypted = encrypt_ecdh(pub_file, priv_file, message);
-                std::cout << encrypted << std::endl;
+                std::ofstream out;
+                out.open("encrypted");
+                out << encrypted;
+                out.close();
             } 
             else {
                 char *decrypted = decrypt_ecdh(pub_file, priv_file, message);
-                std::cout << decrypted << std::endl;
+                std::ofstream out;
+                out.open("decrypted");
+                out << decrypted;
+                out.close();
             }
         }
         else if (args.front() == "rsa") {
             if (mode == NEW) {
-                
+                rsa_keygen(priv_file, pub_file);
             }
             else if (mode == ENCRYPT) {
-
+                std::string encrypted = rsa_encrypt(pub_file, message);
+                std::ofstream out;
+                out.open("encrypted");
+                out << encrypted;
+                out.close();
             } 
             else {
-                
+                std::string decrypted = rsa_decrypt(priv_file, message);
+                std::ofstream out;
+                out.open("decrypted");
+                out << decrypted;
+                out.close();
             }
         }
     } 
@@ -137,6 +152,9 @@ int main(int argc, char *argv[]) {
         if (args.front() == "rsa") {
             std::string file_path = args.at(2);
             set_rsa_parameters(file_path);
+        } else if (args.front() == "aes") {
+            std::string file_path = args.at(2);
+            set_aes_parameters(file_path);
         }
     }
 

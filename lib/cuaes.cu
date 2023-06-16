@@ -32,7 +32,9 @@ void f1printBytes(BYTE b[], int len, FILE *fp)
     //    cout << hex << b[i] << " " ;
     fprintf(fp, "\n");
 }
+
 int flag = 0;
+
 void f2printBytes(BYTE b[], int len, FILE *fp)
 {
     int i;
@@ -45,6 +47,7 @@ void f2printBytes(BYTE b[], int len, FILE *fp)
     //    cout << hex << b[i] << " " ;
     // fprintf(fp, "\n");
 }
+
 void f3printBytes(BYTE b[], int len, FILE *fp)
 {
     int i;
@@ -882,7 +885,6 @@ __global__ void AES_Decrypt(aes_block aes_block_array[], BYTE key[], int keyLen,
 
         if (threadIdx.x == 0)
         {
-            //    printf("hello from thread 0\n");
             AES_Init2(AES_Sbox, AES_ShiftRowTab, AES_Sbox_Inv, AES_xtime, AES_ShiftRowTab_Inv);
         }
         __syncthreads();
@@ -890,7 +892,6 @@ __global__ void AES_Decrypt(aes_block aes_block_array[], BYTE key[], int keyLen,
         for (int i = 0; i < 16; i++)
         {
             block[i] = aes_block_array[global_thread_index].block[i];
-            //		printf("%d %d %d\n",i, global_thread_index, block[i]);
         }
         int l = keyLen, i;
         AES_AddRoundKey(block, &key[l - 16]);
@@ -906,20 +907,14 @@ __global__ void AES_Decrypt(aes_block aes_block_array[], BYTE key[], int keyLen,
         AES_AddRoundKey(block, &key[0]);
         for (int i = 0; i < 16; i++)
         {
-            //          printf("%d %d  %d\n",i, global_thread_index, aes_block_array[global_thread_index].block[i]);
             aes_block_array[global_thread_index].block[i] = block[i];
         }
     }
 }
 
-// ===================== test ============================================
-int main(int argc, char *argv[])
-{
-    // int i;
-    // AES_Init<<<1, 1>>>();
-
+int set_aes_parameters(std::string file_path) {
     ifstream ifs;
-    ifs.open(argv[1], std::ifstream::binary);
+    ifs.open(file_path, std::ifstream::binary);
     if (!ifs)
     {
         cerr << "Cannot open the input file" << endl;
@@ -936,15 +931,10 @@ int main(int argc, char *argv[])
 
     BYTE key[16 * (14 + 1)];
     int keyLen = 0;
-    //, maxKeyLen=16 * (14 + 1),
     int blockLen = 16;
-    // for(i = 0; i < keyLen; i++)
-    //     key[i] = 65+i;
-
-    // cout<<endl;
 
     ifstream key_fp;
-    key_fp.open(argv[2]);
+    key_fp.open("AESkey");
     while (key_fp.peek() != EOF)
     {
         key_fp >> key[keyLen];
@@ -967,29 +957,18 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    // for(int i=0; i<keyLen; i++)
-    //{
-    // printf("%c ", key[i]);
-    // }printf("\n");
-
-    // printf("Original key: \n"); printBytes(key, keyLen);
     int expandKeyLen = AES_ExpandKey(key, keyLen);
-    // printf("Expanede key: \n"); printBytes(key, expandKeyLen);
-    // for(int i=0; i<expandKeyLen; i++)
-    // printf("%x ", key[i]);
-    // printf("\n");
-
     if (number_of_zero_pending != 0)
         aes_block_array = new aes_block[block_number + 1];
     else
         aes_block_array = new aes_block[block_number];
     char temp[16];
-    // FILE* orig_fp;
+
     FILE *en_fp;
     FILE *de_fp;
-    // orig_fp = fopen("original.txt", "wb");
-    en_fp = fopen(argv[3], "wb");
-    de_fp = fopen(argv[4], "wb");
+    en_fp = fopen("encrypted", "wb");
+    de_fp = fopen("decrypted", "wb");
+
     for (int i = 0; i < block_number; i++)
     {
 
@@ -1008,13 +987,7 @@ int main(int argc, char *argv[])
         }
         for (int j = 1; j <= 16 - number_of_zero_pending; j++)
             aes_block_array[block_number].block[16 - j] = '\0';
-        // f1printBytes(aes_block_array[block_number].block, blockLen, orig_fp);
-        // AES_Encrypt(aes_block_array[block_number].block, key, expandKeyLen);
-        // printf("After Encryption:\n"); printBytes(block, blockLen);
-        // f1printBytes(aes_block_array[block_number].block, blockLen, en_fp);
-        // AES_Decrypt(aes_block_array[block_number].block, key, expandKeyLen);
 
-        // f3printBytes(aes_block_array[block_number].block, blockLen, de_fp);
         block_number++;
     }
 
@@ -1042,16 +1015,14 @@ int main(int argc, char *argv[])
     dim3 ThreadperBlock(thrdperblock);
 
     printf("num of sms: %d\nThreads per block: %d\n", num_sm, thrdperblock);
-    // if(block_number%num_sm != 0)
-    //        num_sm++;
+
     dim3 BlockperGrid(num_sm);
     cudaMalloc(&cuda_aes_block_array, block_number * sizeof(class aes_block));
     cudaMalloc(&cuda_key, 16 * 15 * sizeof(BYTE));
     cudaMemcpy(cuda_aes_block_array, aes_block_array, block_number * sizeof(class aes_block), cudaMemcpyHostToDevice);
     cudaMemcpy(cuda_key, key, 16 * 15 * sizeof(BYTE), cudaMemcpyHostToDevice);
-    // printf("size = : %d\n", sizeof(class aes_block));
-    // printf("host: aes block number: %d\n", block_number);
-    // printf("host: expand key length: %d\n", expandKeyLen);
+
+    printf("Encrypting on GPU...\n");
     AES_Encrypt<<<BlockperGrid, ThreadperBlock>>>(cuda_aes_block_array, cuda_key, expandKeyLen, block_number);
 
     cudaMemcpy(aes_block_array, cuda_aes_block_array, block_number * sizeof(class aes_block), cudaMemcpyDeviceToHost);
@@ -1065,6 +1036,7 @@ int main(int argc, char *argv[])
     else
         f1printBytes(aes_block_array[block_number - 1].block, blockLen, en_fp);
 
+    printf("Decrypting on GPU...\n");
     AES_Decrypt<<<BlockperGrid, ThreadperBlock>>>(cuda_aes_block_array, cuda_key, expandKeyLen, block_number);
 
     cudaMemcpy(aes_block_array, cuda_aes_block_array, block_number * sizeof(class aes_block), cudaMemcpyDeviceToHost);
@@ -1078,25 +1050,6 @@ int main(int argc, char *argv[])
     else
         f3printBytes(aes_block_array[block_number - 1].block, blockLen, de_fp);
 
-    // cudaFree(cuda_aes_block_array);
-    // cudaFree(cuda_key);
-
-    // cout<<"line number: "<<flag<<endl;
-    /*
-    for(int i=0; i<block_number; i++){
-        //f1printBytes(aes_block_array[i].block, blockLen, orig_fp);
-        AES_Encrypt(aes_block_array[i].block, key, expandKeyLen);
-        //printf("After Encryption:\n");
-        f1printBytes(aes_block_array[i].block, blockLen, en_fp);
-        AES_Decrypt(aes_block_array[i].block, key, expandKeyLen);
-
-    }
-    */
-    // printf("\n");
-
-    // printf("Original message: \n"); printBytes(block, 16);
-
-    // printf("After Decryption:\n"); printBytes(block, blockLen);
     AES_Done();
     fclose(en_fp);
     fclose(de_fp);

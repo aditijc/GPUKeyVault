@@ -1,5 +1,5 @@
 CXX := nvcc
-CXXLIBS := lib/interface.cpp lib/ecdh.cpp lib/aes.cpp lib/rsa.cpp lib/cursa.cu
+CXXLIBS := lib/interface.cpp lib/ecdh.cpp lib/aes.cpp lib/rsa.cpp lib/cursa.cu lib/cuaes.cu
 CXXFLAGS := -lssl -lcrypto -Wno-deprecated-declarations -arch=sm_52
 BUILDDIR := bin
 RESULTSDIR := results

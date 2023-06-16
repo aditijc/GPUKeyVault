@@ -132,6 +132,7 @@ void fc() {
         }
     }
 }
+
 void enc_gpu() {
     // Allocate and copy memory on the GPU
     cudaSetDevice(1);
@@ -238,9 +239,3 @@ void dec_gpu() {
         fclose(fp);
     }
 }
-
-// int main() {
-//     std::string fp = "lib/cuda-rsa/input.txt";
-//     set_rsa_parameters(fp);
-//     return 0;
-// }
