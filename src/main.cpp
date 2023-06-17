@@ -155,6 +155,9 @@ int main(int argc, char *argv[]) {
         } else if (args.front() == "aes") {
             std::string file_path = args.at(2);
             set_aes_parameters(file_path);
+        } else {
+            std::cout << "Invalid encryption form for GPU. RSA and AES available." << std::endl;
+            return 1; 
         }
     }
 

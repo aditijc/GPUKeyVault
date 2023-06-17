@@ -8,7 +8,6 @@
 
 void generatePrimes(BIGNUM* p, BIGNUM* q) {
     BIGNUM* tmp = BN_new();
-    // generate one prime on gpu
     BN_generate_prime_ex(p, 1024, 0, NULL, NULL, NULL);
     do {
         BN_generate_prime_ex(q, 1024, 0, NULL, NULL, NULL);

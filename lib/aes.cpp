@@ -8,8 +8,6 @@
 #include <string>
 #include <vector>
 
-
-
 const int AES_KEY_SIZE = 256;  // AES-256
 
 
@@ -19,7 +17,6 @@ char *aes_encrypt(unsigned char *shared_secret, size_t shared_secret_len, const 
     EVP_CIPHER_CTX *aes_ctx = EVP_CIPHER_CTX_new();
     if (!aes_ctx) {
         std::cerr << "Encryption Error: Failed to create encryption context." << std::endl;
-        // EC_KEY_free(ec_pubkey);
         delete[] shared_secret;
         return nullptr;
     }
